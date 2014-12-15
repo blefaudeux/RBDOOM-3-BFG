@@ -1203,6 +1203,21 @@ add_definitions(-D__DOOM__
                 )
 
 if(TET)
+    add_definitions(-DUSE_TET)
+
+    SET( Boost_USE_MULTITHREAD ON )
+    SET( Boost_USE_STATIC_LIBS ON )
+    SET( BOOST_MIN_VERSION "1.53.0" )
+    FIND_PACKAGE( Boost REQUIRED thread system )
+
+    IF(Boost_FOUND)
+        list(APPEND RBDOOM3_INCLUDES ${Boost_INCLUDE_DIR})
+        link_directories( ${Boost_LIBRARIES} )
+        message("Boost include dir : ${Boost_INCLUDE_DIR}\n Boost libraries :  ${Boost_LIBRARIES}\n" )
+    ELSE()
+      message (FATAL_ERROR "Could not find Boost libraries!")
+    ENDIF(Boost_FOUND)
+
     list(APPEND RBDOOM3_INCLUDES ${TET_INCLUDES})
     list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})
 endif()
@@ -1419,6 +1434,7 @@ if(MSVC)
         ${PNG_LIBRARY}
         ${JPEG_LIBRARY}
         ${GLEW_LIBRARY}
+        ${Boost_LIBRARIES}
         )
 
     #CMAKE_BINARY_DIR
@@ -1584,6 +1600,7 @@ else()
             ${PNG_LIBRARY}
             ${JPEG_LIBRARY}
             ${GLEW_LIBRARY}
+            ${Boost_LIBRARIES}
             )
     endif()
 
