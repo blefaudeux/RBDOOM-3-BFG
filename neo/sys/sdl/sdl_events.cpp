@@ -113,8 +113,31 @@ struct mouse_poll_t
 	}
 };
 
+struct gaze_poll_t
+{
+    // Represent gaze events here
+    int valueX;
+    int valueY;
+
+    bool state;
+
+    gaze_poll_t()
+    {
+    }
+
+    mouse_poll_t( bool _state, int _valueX, int _valueY )
+    {
+        state = _state;
+        valueX = _valueX;
+        valueY = _valueY;
+    }
+};
+
+// TODO: Ben - Add a pointer to a gaze listener here, find some clean way
+
 static idList<kbd_poll_t> kbd_polls;
 static idList<mouse_poll_t> mouse_polls;
+static idList<mouse_poll_t> gaze_polls;
 
 struct joystick_poll_t
 {
@@ -633,6 +656,9 @@ void Sys_InitInput()
 		joy = NULL;
 	}
 	// WM0110
+
+    // TODO: Ben - Open the gaze listener here
+
 }
 
 /*
