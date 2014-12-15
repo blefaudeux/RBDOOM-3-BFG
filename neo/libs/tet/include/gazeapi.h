@@ -10,8 +10,8 @@
 #ifndef _THEEYETRIBE_GAZEAPI_H_
 #define _THEEYETRIBE_GAZEAPI_H_
 
-#include <gazeapi_types.h>
-#include <gazeapi_interfaces.h>
+#include <libs/tet/include/gazeapi_types.h>
+#include <libs/tet/include/gazeapi_interfaces.h>
 
 #include <memory>
 #include <string>

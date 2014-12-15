@@ -10,7 +10,7 @@
 #ifndef _THEEYETRIBE_GAZEAPI_INTERFACES_H_
 #define _THEEYETRIBE_GAZEAPI_INTERFACES_H_
 
-#include <gazeapi_types.h>
+#include <libs/tet/include/gazeapi_types.h>
 
 
 namespace gtl

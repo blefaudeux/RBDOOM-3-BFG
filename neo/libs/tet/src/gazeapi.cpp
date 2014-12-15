@@ -18,13 +18,13 @@
 #undef NOMINMAX
 #endif
 
-#include "gazeapi.h"
-#include "gazeapi_interfaces.h"
-#include "gazeapi_types.h"
+#include "libs/tet/include/gazeapi.h"
+#include "libs/tet/include/gazeapi_interfaces.h"
+#include "libs/tet/include/gazeapi_types.h"
 
-#include "gazeapi_observable.hpp"
-#include "gazeapi_parser.hpp"
-#include "gazeapi_socket.hpp"
+#include "libs/tet/src/gazeapi_observable.hpp"
+#include "libs/tet/src/gazeapi_parser.hpp"
+#include "libs/tet/src/gazeapi_socket.hpp"
 
 #include <boost/thread.hpp>
 #include <boost/property_tree/json_parser.hpp>
