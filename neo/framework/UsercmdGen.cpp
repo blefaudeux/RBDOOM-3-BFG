@@ -262,6 +262,7 @@ private:
 	void			JoystickMove();
 	void			JoystickMove2();
 	void			MouseMove();
+    void            GazeMove();
 	void			CmdButtons();
 	
 	void			AimAssist();
@@ -295,6 +296,7 @@ private:
 	bool			mouseDown;
 	
 	int				mouseDx, mouseDy;	// added to by mouse events
+    int             gazeDx, gazeDy;
 	float			joystickAxis[MAX_JOYSTICK_AXIS];	// set by joystick events
 	
 	int				pollTime;
@@ -523,6 +525,66 @@ void idUsercmdGenLocal::MouseMove()
 	viewangles[YAW] -= m_yaw.GetFloat() * mx * in_mouseSpeed.GetFloat();
 	viewangles[PITCH] += m_pitch.GetFloat() * in_mouseSpeed.GetFloat() * ( in_mouseInvertLook.GetBool() ? -my : my );
 }
+
+
+/*
+=================
+idUsercmdGenLocal::GazeMove
+=================
+*/
+void idUsercmdGenLocal::GazeMove()
+{
+    // Ben - we basically do the same as what's already done for the mouse here
+    // TODO: Refine the interaction
+
+    float		mx, my;
+    static int	history[8][2];
+    static int	historyCounter;
+    int			i;
+
+    history[historyCounter & 7][0] = gazeDx;
+    history[historyCounter & 7][1] = gazeDy;
+
+    // allow mouse movement to be smoothed together
+    int smooth = m_smooth.GetInteger();
+    if( smooth < 1 )
+    {
+        smooth = 1;
+    }
+    if( smooth > 8 )
+    {
+        smooth = 8;
+    }
+    mx = 0;
+    my = 0;
+    for( i = 0 ; i < smooth ; i++ )
+    {
+        mx += history[( historyCounter - i + 8 ) & 7 ][0];
+        my += history[( historyCounter - i + 8 ) & 7 ][1];
+    }
+    mx /= smooth;
+    my /= smooth;
+
+    historyCounter++;
+
+    if( idMath::Fabs( mx ) > 1000 || idMath::Fabs( my ) > 1000 )
+    {
+        Sys_DebugPrintf( "idUsercmdGenLocal::GazeMove: Ignoring ridiculous delta.\n" );
+        mx = my = 0;
+    }
+
+    // TODO: Add a sensitivity-like setting for the gaze
+    // mx *= sensitivity.GetFloat();
+    // my *= sensitivity.GetFloat();
+    gazeDx = 0;
+    gazeDy = 0;
+
+    // Gaze changes the viewpoint here !
+    viewangles[YAW] -= m_yaw.GetFloat() * mx;
+    viewangles[PITCH] += m_pitch.GetFloat() * my;
+}
+
+
 
 /*
 ========================
@@ -1430,8 +1492,10 @@ void idUsercmdGenLocal::Gaze()
     // Study each of the buffer elements and process them.
     for( int i = 0; i < numEvents; i++ )
     {
-        // Do something with the gaze here..
-        // TODO : Ben
+        // Translate gaze points into mouse motion
+        // ... only on the edges (create a "dead zone" in the middle
+
+
     }
 }
 
@@ -1524,8 +1588,8 @@ void idUsercmdGenLocal::BuildCurrentUsercmd( int deviceNum )
 	}
 
     // process the gaze events
-    // TODO: Ben
-	
+    Gaze();
+
 	// create the usercmd
 	MakeCurrent();
 	

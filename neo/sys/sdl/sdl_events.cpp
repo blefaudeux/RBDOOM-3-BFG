@@ -657,7 +657,7 @@ void Sys_InitInput()
 	// WM0110
 
 
-    // Start polling the gaze coordinates from the eye tracker
+    // Open the gaze coordinates poll
     if (gazeListener == NULL )
     {
         gazeListener = new idGaze();
@@ -674,6 +674,7 @@ void Sys_ShutdownInput()
 	kbd_polls.Clear();
 	mouse_polls.Clear();
 	joystick_polls.Clear();
+    gaze_polls.Clear();
 	
 	// Close any opened SDL Joystic
 	if( joy )
