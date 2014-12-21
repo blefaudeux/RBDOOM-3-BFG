@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/tr_local.h"
 #include "sdl_local.h"
 #include "../posix/posix_public.h"
+#include <sys/common/gaze.h>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 0)
 #define SDL_Keycode SDLKey
@@ -113,8 +114,29 @@ struct mouse_poll_t
 	}
 };
 
+struct gaze_poll_t
+{
+    int status;
+    int gazeX;
+    int gazeY;
+
+    gaze_poll_t()
+    {
+    }
+
+    gaze_poll_t(int _status, int _gazeX, int _gazeY )
+    {
+        status = _status;
+        gazeX = _gazeX;
+        gazeY = _gazeY;
+    }
+};
+
+idGaze * gazeListener = NULL;
+
 static idList<kbd_poll_t> kbd_polls;
 static idList<mouse_poll_t> mouse_polls;
+static idList<gaze_poll_t> gaze_polls;
 
 struct joystick_poll_t
 {
@@ -634,8 +656,12 @@ void Sys_InitInput()
 	}
 	// WM0110
 
-    // TODO: Ben - Open the gaze listener here
 
+    // Start polling the gaze coordinates from the eye tracker
+    if (gazeListener == NULL )
+    {
+        gazeListener = new idGaze();
+    }
 }
 
 /*
@@ -659,6 +685,12 @@ void Sys_ShutdownInput()
 	{
 		common->Printf( "Sys_ShutdownInput: SDL joystick not initialized. Nothing to close.\n" );
 	}
+
+    // Close the eye tracker polling service
+    if ( gazeListener )
+    {
+        delete gazeListener;
+    }
 }
 
 /*
@@ -1505,6 +1537,28 @@ int Sys_PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] )
 	mouse_polls.SetNum( 0 );
 	
 	return numEvents;
+}
+
+int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
+{
+    int numEvents = gaze_polls.Num();
+
+    if( numEvents > MAX_GAZE_EVENTS )
+    {
+        numEvents = MAX_GAZE_EVENTS;
+    }
+
+    for( int i = 0; i < numEvents; i++ )
+    {
+        const gaze_poll_t& mp = gaze_polls[i];
+
+        gazeEvents[i][0] = mp.gazeX;
+        gazeEvents[i][1] = mp.gazeY;
+    }
+
+    gaze_polls.SetNum( 0 );
+
+    return numEvents;
 }
 
 

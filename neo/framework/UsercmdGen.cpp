@@ -267,6 +267,7 @@ private:
 	void			AimAssist();
 	
 	void			Mouse();
+    void            Gaze();
 	void			Keyboard();
 	void			Joystick( int deviceNum );
 	
@@ -1417,6 +1418,25 @@ void idUsercmdGenLocal::Keyboard()
 
 /*
 ===============
+idUsercmdGenLocal::Gaze
+===============
+*/
+void idUsercmdGenLocal::Gaze()
+{
+    int	gazeEvents[MAX_GAZE_EVENTS][2];
+
+    int numEvents = Sys_PollGazeEvents( gazeEvents );
+
+    // Study each of the buffer elements and process them.
+    for( int i = 0; i < numEvents; i++ )
+    {
+        // Do something with the gaze here..
+        // TODO : Ben
+    }
+}
+
+/*
+===============
 idUsercmdGenLocal::Joystick
 ===============
 */
@@ -1502,6 +1522,9 @@ void idUsercmdGenLocal::BuildCurrentUsercmd( int deviceNum )
 	{
 		Joystick( deviceNum );
 	}
+
+    // process the gaze events
+    // TODO: Ben
 	
 	// create the usercmd
 	MakeCurrent();

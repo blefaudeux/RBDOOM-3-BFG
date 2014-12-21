@@ -542,6 +542,10 @@ void			Sys_EndKeyboardInputEvents();
 static const int MAX_MOUSE_EVENTS = 256;
 int				Sys_PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] );
 
+// gaze input polling
+static const int MAX_GAZE_EVENTS = 10;
+int				Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] );
+
 // joystick input polling
 void			Sys_SetRumble( int device, int low, int hi );
 int				Sys_PollJoystickInputEvents( int deviceNum );
