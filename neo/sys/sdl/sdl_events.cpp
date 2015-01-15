@@ -1461,6 +1461,7 @@ void Sys_ClearEvents()
 		
 	kbd_polls.SetNum( 0 );
 	mouse_polls.SetNum( 0 );
+    gaze_polls.SetNum( 0 );
 }
 
 /*

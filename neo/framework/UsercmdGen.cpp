@@ -27,6 +27,10 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include "precompiled.h"
+#include <math/Math.h>
+#include <numeric>
+#include <math/Polynomial.h>
+
 #pragma hdrstop
 
 idCVar joy_mergedThreshold( "joy_mergedThreshold", "1", CVAR_BOOL | CVAR_ARCHIVE, "If the thresholds aren't merged, you drift more off center" );
@@ -296,7 +300,7 @@ private:
 	bool			mouseDown;
 	
 	int				mouseDx, mouseDy;	// added to by mouse events
-    int             gazeDx, gazeDy;
+    int             gazex, gazey;
 	float			joystickAxis[MAX_JOYSTICK_AXIS];	// set by joystick events
 	
 	int				pollTime;
@@ -534,56 +538,20 @@ idUsercmdGenLocal::GazeMove
 */
 void idUsercmdGenLocal::GazeMove()
 {
-    // Ben - we basically do the same as what's already done for the mouse here
-    // TODO: Refine the interaction
+    // Compute the point-of-view change based on the gaze pose here
+    float deltaGazeX = (renderSystem->GetWidth() - gazex)/float(renderSystem->GetWidth());
+    float deltaGazeY = (renderSystem->GetHeight() - gazey)/float(renderSystem->GetHeight());
 
-    float		mx, my;
-    static int	history[8][2];
-    static int	historyCounter;
-    int			i;
+    float gazeSensitivity = 1.f; // TODO: Propagate this from user-exposed settings
 
-    history[historyCounter & 7][0] = gazeDx;
-    history[historyCounter & 7][1] = gazeDy;
-
-    // allow mouse movement to be smoothed together
-    int smooth = m_smooth.GetInteger();
-    if( smooth < 1 )
-    {
-        smooth = 1;
-    }
-    if( smooth > 8 )
-    {
-        smooth = 8;
-    }
-    mx = 0;
-    my = 0;
-    for( i = 0 ; i < smooth ; i++ )
-    {
-        mx += history[( historyCounter - i + 8 ) & 7 ][0];
-        my += history[( historyCounter - i + 8 ) & 7 ][1];
-    }
-    mx /= smooth;
-    my /= smooth;
-
-    historyCounter++;
-
-    if( idMath::Fabs( mx ) > 1000 || idMath::Fabs( my ) > 1000 )
-    {
-        Sys_DebugPrintf( "idUsercmdGenLocal::GazeMove: Ignoring ridiculous delta.\n" );
-        mx = my = 0;
-    }
-
-    // TODO: Add a sensitivity-like setting for the gaze
-    // mx *= sensitivity.GetFloat();
-    // my *= sensitivity.GetFloat();
-    gazeDx = 0;
-    gazeDy = 0;
+    // Transform gaze offset into a motion command :
+//    deltaGazeX = std::pow(deltaGazeX, 1/gazeSensitivity); // TODO: Ben - change this shape, looks bad
+//    deltaGazeY = std::pow(deltaGazeY, 1/gazeSensitivity);
 
     // Gaze changes the viewpoint here !
-    viewangles[YAW] -= m_yaw.GetFloat() * mx;
-    viewangles[PITCH] += m_pitch.GetFloat() * my;
+    viewangles[YAW] -= m_yaw.GetFloat() * deltaGazeX;
+    viewangles[PITCH] += m_pitch.GetFloat() * deltaGazeY;
 }
-
 
 
 /*
@@ -1186,9 +1154,10 @@ void idUsercmdGenLocal::MakeCurrent()
 		toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() && common->IsMultiplayer() );
 		toggled_zoom.SetKeyState( ButtonState( UB_ZOOM ), in_toggleZoom.GetBool() );
 		
-		// get basic movement from mouse
+        // get basic movement from mouse and gaze
 		MouseMove();
-		
+        GazeMove();
+
 		// get basic movement from joystick and set key bits
 		// must be done before CmdButtons!
 		if( joy_newCode.GetBool() )
@@ -1256,7 +1225,7 @@ void idUsercmdGenLocal::AimAssist()
 	{
 		game->GetAimAssistAngles( aimAssistAngles );
 	}
-	
+
 	viewangles[YAW] += aimAssistAngles.yaw;
 	viewangles[PITCH] += aimAssistAngles.pitch;
 	viewangles[ROLL] += aimAssistAngles.roll;
@@ -1489,14 +1458,18 @@ void idUsercmdGenLocal::Gaze()
 
     int numEvents = Sys_PollGazeEvents( gazeEvents );
 
-    // Study each of the buffer elements and process them.
+    // Just average the gaze buffer values
+    gazex = 0;
+    gazey = 0;
+
     for( int i = 0; i < numEvents; i++ )
     {
-        // Translate gaze points into mouse motion
-        // ... only on the edges (create a "dead zone" in the middle
-
-
+        gazex = gazeEvents[i][0];
+        gazey = gazeEvents[i][1];
     }
+
+    gazex = numEvents > 0 ? int(gazex/float(numEvents)) : -1; // Do we need a proper rounding here ?
+    gazey = numEvents > 0 ? int(gazey/float(numEvents)) : -1;
 }
 
 /*
