@@ -86,7 +86,11 @@ sysEvent_t	idEventLoop::GetRealEvent()
 	}
 	else
 	{
+        // Grab the SDL events (mouse, kbd, joystick)
 		ev = Sys_GetEvent();
+
+        // Grab the gaze events
+
 		
 		// write the journal value out if needed
 		if( com_journal.GetInteger() == 1 )

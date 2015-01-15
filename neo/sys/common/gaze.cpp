@@ -8,6 +8,7 @@ idGaze::idGaze()
     {
         // Enable GazeData notifications
         m_api.add_listener( *this );
+        common->Warning( "Connected to The Eye Tribe server" );
     }
 }
 
@@ -22,6 +23,10 @@ void idGaze::on_gaze_data( gtl::GazeData const & gaze_data )
     if( gaze_data.state & gtl::GazeData::GD_STATE_TRACKING_GAZE )
     {
         gtl::Point2D const & smoothedCoordinates = gaze_data.avg;
+
+//        common->Printf( "New gaze coordinate : %.2f %.2f\n",
+//                        smoothedCoordinates.x,
+//                        smoothedCoordinates.y );
 
         // Move GUI point, do hit-testing, log coordinates, etc.
         m_gazePoints.Append( std::make_pair<float,float>(smoothedCoordinates.x,

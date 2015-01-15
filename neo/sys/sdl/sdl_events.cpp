@@ -136,7 +136,7 @@ idGaze * gazeListener = NULL;
 
 static idList<kbd_poll_t> kbd_polls;
 static idList<mouse_poll_t> mouse_polls;
-static idList<gaze_poll_t> gaze_polls;
+//static idList<gaze_poll_t> gaze_polls;
 
 struct joystick_poll_t
 {
@@ -702,7 +702,7 @@ void Sys_ShutdownInput()
 	kbd_polls.Clear();
 	mouse_polls.Clear();
 	joystick_polls.Clear();
-    gaze_polls.Clear();
+//    gaze_polls.Clear();
 	
 	// Close any opened SDL Joystic
 	if( joy )
@@ -1496,7 +1496,7 @@ sysEvent_t Sys_GetEvent()
 				continue; // just handle next event
 		}
 	}
-	
+
 	return no_more_events;
 }
 
@@ -1514,7 +1514,7 @@ void Sys_ClearEvents()
 		
 	kbd_polls.SetNum( 0 );
 	mouse_polls.SetNum( 0 );
-    gaze_polls.SetNum( 0 );
+//    gaze_polls.SetNum( 0 );
 }
 
 /*
@@ -1597,26 +1597,28 @@ int Sys_PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] )
 
 int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
 {
-    int numEvents = gaze_polls.Num();
+    // Unstack the gaze events
+    int numEvents = gazeListener->m_gazePoints.Num();
 
     if( numEvents > MAX_GAZE_EVENTS )
     {
         numEvents = MAX_GAZE_EVENTS;
     }
 
-    for( int i = 0; i < numEvents; i++ )
+    for( int i = 0; i < numEvents; ++i )
     {
-        const gaze_poll_t& mp = gaze_polls[i];
+        const std::pair<float, float>& gp = gazeListener->m_gazePoints[i];
 
-        gazeEvents[i][0] = mp.gazeX;
-        gazeEvents[i][1] = mp.gazeY;
+        gazeEvents[i][0] = gp.first;
+        gazeEvents[i][1] = gp.second;
     }
 
-    gaze_polls.SetNum( 0 );
+    gazeListener->m_gazePoints.SetNum( 0 );
 
     return numEvents;
+}
 
-const char* Sys_GetKeyName( keyNum_t keynum )
+const char * Sys_GetKeyName( keyNum_t keynum )
 {
 	// unfortunately, in SDL1.2 there is no way to get the keycode for a scancode, so this doesn't work there.
 	// so this is SDL2-only.
