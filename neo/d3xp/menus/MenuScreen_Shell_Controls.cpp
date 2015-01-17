@@ -37,7 +37,8 @@ enum contorlsMenuCmds_t
 	CONTROLS_CMD_GAMEPAD,
 	CONTROLS_CMD_GAMEPAD_ENABLED,
 	CONTROLS_CMD_INVERT,
-	CONTROLS_CMD_MOUSE_SENS
+    CONTROLS_CMD_MOUSE_SENS,
+    CONTROLS_CMD_GAZE_SENS
 };
 
 /*
@@ -118,6 +119,15 @@ void idMenuScreen_Shell_Controls::Initialize( idMenuHandler* data )
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, CONTROLS_CMD_MOUSE_SENS );
 	control->RegisterEventObserver( helpWidget );
 	options->AddChild( control );
+
+    control = new( TAG_SWF ) idMenuWidget_ControlButton();
+    control->SetOptionType( OPTION_SLIDER_BAR );
+    control->SetLabel( "Gaze sensitivity" );	// Gaze Sensitivity
+    control->SetDataSource( &controlData, idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAZE_SENS );
+    control->SetupEvents( 2, options->GetChildren().Num() );
+    control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, CONTROLS_CMD_GAZE_SENS );
+    control->RegisterEventObserver( helpWidget );
+    options->AddChild( control );
 	
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_UP ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_UP_START_REPEATER, WIDGET_EVENT_SCROLL_UP ) );
@@ -302,6 +312,15 @@ bool idMenuScreen_Shell_Controls::HandleAction( idWidgetAction& action, const id
 					}
 					break;
 				}
+                case CONTROLS_CMD_GAZE_SENS:
+                {
+                    controlData.AdjustField( idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAZE_SENS, 1 );
+                    if( options != NULL )
+                    {
+                        options->Update();
+                    }
+                    break;
+                }
 				case CONTROLS_CMD_GAMEPAD_ENABLED:
 				{
 					controlData.AdjustField( idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAMEPAD_ENABLED, 1 );
@@ -345,6 +364,7 @@ bool idMenuScreen_Shell_Controls::HandleAction( idWidgetAction& action, const id
 
 extern idCVar in_mouseInvertLook;
 extern idCVar in_mouseSpeed;
+extern idCVar in_gazeSpeed;
 extern idCVar in_useJoystick;
 
 /*
@@ -368,6 +388,10 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::LoadData()
 	fields[ CONTROLS_FIELD_INVERT_MOUSE ].SetBool( in_mouseInvertLook.GetBool() );
 	float mouseSpeed = ( ( in_mouseSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
 	fields[ CONTROLS_FIELD_MOUSE_SENS ].SetFloat( mouseSpeed );
+
+    float gazeSpeed = ( ( in_gazeSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
+    fields[ CONTROLS_FIELD_GAZE_SENS ].SetFloat( gazeSpeed );
+
 	fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].SetBool( in_useJoystick.GetBool() );
 	
 	originalFields = fields;
@@ -384,6 +408,10 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::CommitData()
 	in_mouseInvertLook.SetBool( fields[ CONTROLS_FIELD_INVERT_MOUSE ].ToBool() );
 	float mouseSpeed = 0.25f + ( ( 4.0f - 0.25 ) * ( fields[ CONTROLS_FIELD_MOUSE_SENS ].ToFloat() / 100.0f ) );
 	in_mouseSpeed.SetFloat( mouseSpeed );
+
+    float gazeSpeed = 0.25f + ( ( 4.0f - 0.25 ) * ( fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() / 100.0f ) );
+    in_gazeSpeed.SetFloat( gazeSpeed );
+
 	in_useJoystick.SetBool( fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToBool() );
 	
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
@@ -408,6 +436,11 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::AdjustField(
 		float newValue = idMath::ClampFloat( 0.0f, 100.0f, fields[ fieldIndex ].ToFloat() + adjustAmount );
 		fields[ fieldIndex ].SetFloat( newValue );
 	}
+    else if( fieldIndex == CONTROLS_FIELD_GAZE_SENS )
+    {
+        float newValue = idMath::ClampFloat( 0.0f, 100.0f, fields[ fieldIndex ].ToFloat() + adjustAmount );
+        fields[ fieldIndex ].SetFloat( newValue );
+    }
 }
 
 /*
@@ -427,6 +460,11 @@ bool idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::IsDataChange
 	{
 		return true;
 	}
+
+    if( fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() != originalFields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() )
+    {
+        return true;
+    }
 	
 	if( fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToFloat() != originalFields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToFloat() )
 	{
