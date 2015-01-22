@@ -29,6 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #include <math/Math.h>
 #include <numeric>
+#include <algorithm>
+#include <cmath>
+
 #include <math/Polynomial.h>
 
 #pragma hdrstop
@@ -48,6 +51,8 @@ idCVar joy_dampenLook( "joy_dampenLook", "1", CVAR_BOOL | CVAR_ARCHIVE, "Do not 
 idCVar joy_deltaPerMSLook( "joy_deltaPerMSLook", "0.003", CVAR_FLOAT | CVAR_ARCHIVE, "Max amount to be added on look per MS" );
 
 idCVar in_mouseSpeed( "in_mouseSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the mouse moves", 0.25f, 4.0f );
+idCVar in_gazeSpeed( "in_gazeSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the pov follows the gaze moves", 0.1f, 10.0f );
+
 idCVar in_alwaysRun( "in_alwaysRun", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP" );
 
 idCVar in_useJoystick( "in_useJoystick", "0", CVAR_ARCHIVE | CVAR_BOOL, "enables/disables the gamepad for PC use" );
@@ -544,7 +549,20 @@ template <typename T> int sgn(T val) {
 
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
-    return gazeDiff * gazeDiff * sgn(gazeDiff) ;
+    float activeWindow = 0.7f; // (from 0 to 1, portion of the screen on the side turned off)
+
+    // Use Tukey weight function
+    float weight;
+    if ( std::abs(gazeDiff) < activeWindow )
+    {
+        weight =  (1.f - std::pow( 1 - std::pow(gazeDiff/activeWindow, 2.f), 2.f));
+    }
+    else
+    {
+        weight = 1.f;
+    }
+
+    return weight * sgn(gazeDiff);
 }
 
 /*
@@ -557,19 +575,25 @@ void idUsercmdGenLocal::GazeMove()
     if ( gazex != -1 )
     {
         // Compute the point-of-view change based on the gaze pose here
-        float deltaGazeX = (renderSystem->GetWidth()/2 - gazex)/float(renderSystem->GetWidth());
-        float deltaGazeY = (renderSystem->GetHeight()/2 - gazey)/float(renderSystem->GetHeight());
+        // Referential is +-0.5
+        int const screenWidthHalf = renderSystem->GetWidth()>>1;
+        int const screenHeightHalf = renderSystem->GetHeight()>>1;
 
-        //deltaGazeX = DampingGazeMotion(deltaGazeX);
-        //deltaGazeY = DampingGazeMotion(deltaGazeY);
 
-        float gazeSensitivity = 100.f; // TODO: Propagate this from user-exposed settings
+        float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
+        float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-        // Gaze changes the viewpoint here !
-        viewangles[YAW] += m_yaw.GetFloat() * deltaGazeX * gazeSensitivity;
-        viewangles[PITCH] -= m_pitch.GetFloat() * deltaGazeY * gazeSensitivity;
+//        common->Printf(" gaze %d %d - deltaGaze %f %f\n", gazex, gazey, deltaGazeX, deltaGazeY);
 
-//        common->Printf("Offsetting pov : %f %f\n", deltaGazeX, deltaGazeY);
+        deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
+        deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
+
+        // Ceil the values, in case something went wrong
+        float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);
+        float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.f), 1.f );
+
+        viewangles[YAW] -= yawOff;
+        viewangles[PITCH] += pitchOff;
     }
 }
 
@@ -1484,8 +1508,8 @@ void idUsercmdGenLocal::Gaze()
 
     for( int i = 0; i < numEvents; i++ )
     {
-        gazex = gazeEvents[i][0];
-        gazey = gazeEvents[i][1];
+        gazex += gazeEvents[i][0];
+        gazey += gazeEvents[i][1];
     }
 
     gazex = numEvents > 0 ? int(gazex/float(numEvents)) : -1; // Do we need a proper rounding here ?
