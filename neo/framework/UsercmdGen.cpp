@@ -549,17 +549,20 @@ template <typename T> int sgn(T val) {
 
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
-    float activeWindow = 0.8f; // (from 0 to 1, portion of the screen on the side turned off)
+    float activeWindow = 0.7f; // (from 0 to 1, portion of the screen on the side turned off)
 
     // Use Tukey weight function
+    float weight;
     if ( std::abs(gazeDiff) < activeWindow )
     {
-        return (1.f - std::pow( 1 - std::pow(gazeDiff/activeWindow, 2.f), 2.f)) * sgn(gazeDiff);
+        weight =  (1.f - std::pow( 1 - std::pow(gazeDiff/activeWindow, 2.f), 2.f));
     }
     else
     {
-        return 0.f;
+        weight = 1.f;
     }
+
+    return weight * sgn(gazeDiff);
 }
 
 /*
@@ -572,19 +575,25 @@ void idUsercmdGenLocal::GazeMove()
     if ( gazex != -1 )
     {
         // Compute the point-of-view change based on the gaze pose here
-        // Referential is +-1
-        float deltaGazeX = (renderSystem->GetWidth()/2 - gazex)/float(renderSystem->GetWidth());
-        float deltaGazeY = (renderSystem->GetHeight()/2 - gazey)/float(renderSystem->GetHeight());
+        // Referential is +-0.5
+        int const screenWidthHalf = renderSystem->GetWidth()>>1;
+        int const screenHeightHalf = renderSystem->GetHeight()>>1;
 
-        deltaGazeX = 300 * DampingGazeMotion(deltaGazeX);
-        deltaGazeY = 100 * DampingGazeMotion(deltaGazeY);
+
+        float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
+        float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
+
+//        common->Printf(" gaze %d %d - deltaGaze %f %f\n", gazex, gazey, deltaGazeX, deltaGazeY);
+
+        deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
+        deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
 
         // Ceil the values, in case something went wrong
-        float yawOff = std::min( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), 1.f);
-        float pitchOff = std::min( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), 1.f );
+        float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);
+        float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.f), 1.f );
 
-        viewangles[YAW] += yawOff;
-        viewangles[PITCH] -= pitchOff;
+        viewangles[YAW] -= yawOff;
+        viewangles[PITCH] += pitchOff;
     }
 }
 
@@ -1499,8 +1508,8 @@ void idUsercmdGenLocal::Gaze()
 
     for( int i = 0; i < numEvents; i++ )
     {
-        gazex = gazeEvents[i][0];
-        gazey = gazeEvents[i][1];
+        gazex += gazeEvents[i][0];
+        gazey += gazeEvents[i][1];
     }
 
     gazex = numEvents > 0 ? int(gazex/float(numEvents)) : -1; // Do we need a proper rounding here ?
