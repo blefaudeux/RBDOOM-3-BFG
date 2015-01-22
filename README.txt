@@ -298,6 +298,9 @@ __________________________________________
 	make the game less dark. https://developer.valvesoftware.com/wiki/Half_Lambert
 
 
+- [ben-branch] Added gaze interaction with The Eye Tribe tracker. Work in progress, but for now the point of view
+loosely follows the gaze, and the torchlight should do the same soon
+
 ___________________________________________________
 
 9) CONSOLE VARIABLES
