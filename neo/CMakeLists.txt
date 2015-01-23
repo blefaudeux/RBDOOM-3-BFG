@@ -9,9 +9,9 @@ option(USE_MFC_TOOLS
 option(MONOLITH
         "Embed game logic into main executable" ON)
 
-option(SDL2 
-	"Use SDL2 instead of SDL1.2" ON)
-	
+option(SDL2
+    "Use SDL2 instead of SDL1.2" ON)
+
 option(OPENAL
         "Use OpenAL soft instead of XAudio2" OFF)
 
@@ -36,7 +36,8 @@ option(USE_SYSTEM_LIBJPEG
 option(USE_SYSTEM_LIBGLEW
                 "Use the system libglew instead of the bundled one" OFF)
 
-option( USE_TET_GAZE "Use The Eye Tribe eye tracker" OFF )
+option(USE_TET_GAZE
+                "Use The Eye Tribe eye tracker" OFF )
 
 if(UNIX)
     set(OPENAL TRUE)
@@ -1202,7 +1203,7 @@ add_definitions(-D__DOOM__
                 #-DFT2_BUILD_LIBRARY
                 )
 
-if(TET)
+if(USE_TET_GAZE)
     add_definitions(-DUSE_TET)
 
     SET( Boost_USE_MULTITHREAD ON )

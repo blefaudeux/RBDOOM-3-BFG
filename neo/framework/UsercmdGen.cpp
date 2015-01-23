@@ -549,8 +549,9 @@ template <typename T> int sgn(T val) {
 
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
-    float activeWindow = 0.7f; // (from 0 to 1, portion of the screen on the side turned off)
+    float activeWindow = 0.3f; // (from 0 to 0.5, portion of the screen on the side turned off)
 
+    /*
     // Use Tukey weight function
     float weight;
     if ( std::abs(gazeDiff) < activeWindow )
@@ -563,6 +564,17 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
     }
 
     return weight * sgn(gazeDiff);
+    */
+
+    // Custom crafted weight function instead :
+    if ( std::abs( gazeDiff) < activeWindow )
+    {
+        return 0.;
+    }
+    else
+    {
+        return sgn(gazeDiff) * std::pow( gazeDiff - activeWindow, 2.f );
+    }
 }
 
 /*
@@ -582,8 +594,6 @@ void idUsercmdGenLocal::GazeMove()
 
         float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
         float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
-
-//        common->Printf(" gaze %d %d - deltaGaze %f %f\n", gazex, gazey, deltaGazeX, deltaGazeY);
 
         deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
         deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
