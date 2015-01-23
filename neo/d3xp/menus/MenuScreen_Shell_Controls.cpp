@@ -389,7 +389,7 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::LoadData()
     float mouseSpeed = ( ( in_mouseSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
     fields[ CONTROLS_FIELD_MOUSE_SENS ].SetFloat( mouseSpeed );
 
-    float gazeSpeed = ( ( in_gazeSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
+    float gazeSpeed = in_gazeSpeed.GetFloat();
     fields[ CONTROLS_FIELD_GAZE_SENS ].SetFloat( gazeSpeed );
 
     fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].SetBool( in_useJoystick.GetBool() );
@@ -409,7 +409,7 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::CommitData()
     float mouseSpeed = 0.25f + ( ( 4.0f - 0.25 ) * ( fields[ CONTROLS_FIELD_MOUSE_SENS ].ToFloat() / 100.0f ) );
     in_mouseSpeed.SetFloat( mouseSpeed );
 
-    float gazeSpeed = 0.25f + ( ( 4.0f - 0.25 ) * ( fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() / 100.0f ) );
+    float gazeSpeed = fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat();
     in_gazeSpeed.SetFloat( gazeSpeed );
 
     in_useJoystick.SetBool( fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToBool() );

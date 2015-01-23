@@ -573,7 +573,7 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
     }
     else
     {
-        return sgn(gazeDiff) * std::pow( gazeDiff - activeWindow, 2.f );
+        return sgn(gazeDiff) * (std::abs(gazeDiff) - activeWindow);
     }
 }
 
