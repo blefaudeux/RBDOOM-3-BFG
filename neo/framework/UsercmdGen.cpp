@@ -573,7 +573,7 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
     }
     else
     {
-        return sgn(gazeDiff) * std::pow( gazeDiff - activeWindow, 2.f );
+        return sgn(gazeDiff) * std::abs( gazeDiff - activeWindow);
     }
 }
 
@@ -1259,9 +1259,11 @@ void idUsercmdGenLocal::MakeCurrent()
     cmd.mx = continuousMouseX;
     cmd.my = continuousMouseY;
 
+    cmd.gazex = gazex; // TODO: Ben - shouldn't we set a normalized value here, wrt monitor size ?
+    cmd.gazey = gazey;
+
     impulseSequence = cmd.impulseSequence;
     impulse = cmd.impulse;
-
 }
 
 /*

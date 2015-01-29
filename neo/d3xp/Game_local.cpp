@@ -2523,7 +2523,7 @@ idCVar g_recordTrace( "g_recordTrace", "0", CVAR_BOOL, "" );
 idGameLocal::RunFrame
 ================
 */
-void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
+void idGameLocal::f( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 {
 	idEntity* 	ent;
 	int			num;
