@@ -114,6 +114,8 @@ public:
 	
 	short		mx;								// mouse delta x
 	short		my;								// mouse delta y
+    short       gazex;                          // gaze x
+    short       gazey;                          // gaze y
 	
 	// Clients are authoritative on their positions
 	idVec3		pos;
