@@ -1,4 +1,5 @@
 #include "gaze.h"
+#if defined(USE_TET)
 
 // --- MyGaze implementation
 idGaze::idGaze()
@@ -32,3 +33,5 @@ void idGaze::on_gaze_data( gtl::GazeData const & gaze_data )
     // Restrain the list to the last 10 gaze points (not sure that we actually pick the last 10 here..)
     m_gazePoints.Resize( std::min(10, int(m_gazePoints.Size())) );
 }
+
+#endif

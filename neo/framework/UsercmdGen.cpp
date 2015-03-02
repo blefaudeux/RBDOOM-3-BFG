@@ -1259,7 +1259,7 @@ void idUsercmdGenLocal::MakeCurrent()
     cmd.mx = continuousMouseX;
     cmd.my = continuousMouseY;
 
-    cmd.gazex = gazex; // TODO: Ben - shouldn't we set a normalized value here, wrt monitor size ?
+    cmd.gazex = gazex;
     cmd.gazey = gazey;
 
     impulseSequence = cmd.impulseSequence;
