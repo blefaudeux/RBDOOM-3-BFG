@@ -590,20 +590,23 @@ void idUsercmdGenLocal::GazeMove()
         // Referential is +-0.5
         int const screenWidthHalf = renderSystem->GetWidth()>>1;
         int const screenHeightHalf = renderSystem->GetHeight()>>1;
+        float const deadZone = 0.8;
 
+        if ( gazey < renderSystem->GetHeight() * deadZone)
+        {
+            float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
+            float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-        float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
-        float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
+            deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
+            deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
 
-        deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
-        deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
+            // Ceil the values, in case something went wrong
+            float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);
+            float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.f), 1.f );
 
-        // Ceil the values, in case something went wrong
-        float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);
-        float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.f), 1.f );
-
-        viewangles[YAW] -= yawOff;
-        viewangles[PITCH] += pitchOff;
+            viewangles[YAW] -= yawOff;
+            viewangles[PITCH] += pitchOff;
+        }
     }
 }
 
