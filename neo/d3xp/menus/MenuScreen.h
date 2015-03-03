@@ -1617,6 +1617,7 @@ public:
         talkCursor( NULL ),
         combatCursor( NULL ),
         grabberCursor( NULL ),
+        gazeCursor( NULL ),
         bsInfo( NULL ),
         soulcubeInfo( NULL ),
         newItem( NULL ),
@@ -1735,10 +1736,11 @@ private:
     idSWFSpriteInstance* 	talkCursor;
     idSWFSpriteInstance* 	combatCursor;
     idSWFSpriteInstance* 	grabberCursor;
+    idSWFSpriteInstance* 	gazeCursor;
     idSWFSpriteInstance* 	bsInfo;
     idSWFSpriteInstance* 	soulcubeInfo;
     idSWFSpriteInstance* 	newItem;
-    idSWFSpriteInstance*		respawnMessage;
+    idSWFSpriteInstance*	respawnMessage;
     idSWFSpriteInstance* 	flashlight;
     idSWFSpriteInstance* 	mpChatObject;
     idSWFSpriteInstance* 	mpConnection;
