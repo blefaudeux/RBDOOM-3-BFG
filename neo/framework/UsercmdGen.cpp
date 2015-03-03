@@ -51,7 +51,8 @@ idCVar joy_dampenLook( "joy_dampenLook", "1", CVAR_BOOL | CVAR_ARCHIVE, "Do not 
 idCVar joy_deltaPerMSLook( "joy_deltaPerMSLook", "0.003", CVAR_FLOAT | CVAR_ARCHIVE, "Max amount to be added on look per MS" );
 
 idCVar in_mouseSpeed( "in_mouseSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the mouse moves", 0.25f, 4.0f );
-idCVar in_gazeSpeed( "in_gazeSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the pov follows the gaze moves", 0.1f, 10.0f );
+idCVar in_gazeSpeed( "in_gazeSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the pov follows the gaze moves", 0.1f, 100.0f );
+idCVar in_gazePoint( "in_gazePoint", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "display gaze point" );
 
 idCVar in_alwaysRun( "in_alwaysRun", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP" );
 
@@ -597,8 +598,8 @@ void idUsercmdGenLocal::GazeMove()
             float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
             float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-            deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
-            deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
+            deltaGazeX = 300 * DampingGazeMotion(deltaGazeX);
+            deltaGazeY = 100 * DampingGazeMotion(deltaGazeY);
 
             // Ceil the values, in case something went wrong
             float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);

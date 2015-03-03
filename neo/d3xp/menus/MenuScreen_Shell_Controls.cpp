@@ -38,7 +38,8 @@ enum contorlsMenuCmds_t
     CONTROLS_CMD_GAMEPAD_ENABLED,
     CONTROLS_CMD_INVERT,
     CONTROLS_CMD_MOUSE_SENS,
-    CONTROLS_CMD_GAZE_SENS
+    CONTROLS_CMD_GAZE_SENS,
+    CONTROLS_CMD_GAZE_DRAW_ENABLED
 };
 
 /*
@@ -120,6 +121,7 @@ void idMenuScreen_Shell_Controls::Initialize( idMenuHandler* data )
     control->RegisterEventObserver( helpWidget );
     options->AddChild( control );
 
+#if defined(USE_TET)
     control = new( TAG_SWF ) idMenuWidget_ControlButton();
     control->SetOptionType( OPTION_SLIDER_BAR );
     control->SetLabel( "Gaze Sensitivity" );
@@ -128,6 +130,16 @@ void idMenuScreen_Shell_Controls::Initialize( idMenuHandler* data )
     control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, CONTROLS_CMD_GAZE_SENS );
     control->RegisterEventObserver( helpWidget );
     options->AddChild( control );
+
+    control = new( TAG_SWF ) idMenuWidget_ControlButton();
+    control->SetOptionType( OPTION_SLIDER_TOGGLE );
+    control->SetLabel( "Draw gaze point" );	// Render the current gaze point on the fly
+    control->SetDataSource( &controlData, idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAZE_POINT_ENABLED );
+    control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+    control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, CONTROLS_CMD_GAZE_DRAW_ENABLED );
+    control->RegisterEventObserver( helpWidget );
+    options->AddChild( control );
+#endif
 
     options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
     options->AddEventAction( WIDGET_EVENT_SCROLL_UP ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_UP_START_REPEATER, WIDGET_EVENT_SCROLL_UP ) );
@@ -321,6 +333,15 @@ bool idMenuScreen_Shell_Controls::HandleAction( idWidgetAction& action, const id
                     }
                     break;
                 }
+                case CONTROLS_CMD_GAZE_DRAW_ENABLED:
+                {
+                    controlData.AdjustField( idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAZE_POINT_ENABLED, 1 );
+                    if( options != NULL )
+                    {
+                        options->Update();
+                    }
+                    break;
+                }
                 case CONTROLS_CMD_GAMEPAD_ENABLED:
                 {
                     controlData.AdjustField( idMenuDataSource_ControlSettings::CONTROLS_FIELD_GAMEPAD_ENABLED, 1 );
@@ -365,6 +386,7 @@ bool idMenuScreen_Shell_Controls::HandleAction( idWidgetAction& action, const id
 extern idCVar in_mouseInvertLook;
 extern idCVar in_mouseSpeed;
 extern idCVar in_gazeSpeed;
+extern idCVar in_gazePoint;
 extern idCVar in_useJoystick;
 
 /*
@@ -386,13 +408,15 @@ idMenuScreen_Shell_Controls::idMenuDataSource_AudioSettings::LoadData
 void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::LoadData()
 {
     fields[ CONTROLS_FIELD_INVERT_MOUSE ].SetBool( in_mouseInvertLook.GetBool() );
+
     float mouseSpeed = ( ( in_mouseSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
     fields[ CONTROLS_FIELD_MOUSE_SENS ].SetFloat( mouseSpeed );
 
-    float gazeSpeed = in_gazeSpeed.GetFloat();
-    fields[ CONTROLS_FIELD_GAZE_SENS ].SetFloat( gazeSpeed );
+    fields[ CONTROLS_FIELD_GAZE_SENS ].SetFloat( in_gazeSpeed.GetFloat() );
 
     fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].SetBool( in_useJoystick.GetBool() );
+
+    fields[ CONTROLS_FIELD_GAZE_POINT_ENABLED ].SetBool( in_gazePoint.GetBool() );
 
     originalFields = fields;
 }
@@ -412,6 +436,8 @@ void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::CommitData()
     float gazeSpeed = fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat();
     in_gazeSpeed.SetFloat( gazeSpeed );
 
+    in_gazePoint.SetBool( fields[ CONTROLS_FIELD_GAZE_POINT_ENABLED ].ToBool() );
+
     in_useJoystick.SetBool( fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToBool() );
 
     cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
@@ -427,7 +453,9 @@ idMenuScreen_Shell_Controls::idMenuDataSource_AudioSettings::AdjustField
 */
 void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::AdjustField( const int fieldIndex, const int adjustAmount )
 {
-    if( fieldIndex == CONTROLS_FIELD_INVERT_MOUSE || fieldIndex == CONTROLS_FIELD_GAMEPAD_ENABLED )
+    if( fieldIndex == CONTROLS_FIELD_INVERT_MOUSE
+        || fieldIndex == CONTROLS_FIELD_GAMEPAD_ENABLED
+        || fieldIndex == CONTROLS_FIELD_GAZE_POINT_ENABLED )
     {
         fields[ fieldIndex ].SetBool( !fields[ fieldIndex ].ToBool() );
     }
@@ -462,6 +490,11 @@ bool idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::IsDataChange
     }
 
     if( fields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() != originalFields[ CONTROLS_FIELD_GAZE_SENS ].ToFloat() )
+    {
+        return true;
+    }
+
+    if( fields[ CONTROLS_FIELD_GAZE_POINT_ENABLED ].ToBool() != originalFields[ CONTROLS_FIELD_GAZE_POINT_ENABLED ].ToBool() )
     {
         return true;
     }
