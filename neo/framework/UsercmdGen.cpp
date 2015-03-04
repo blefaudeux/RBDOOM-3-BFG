@@ -583,12 +583,12 @@ void idUsercmdGenLocal::GazeMove()
             float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
             float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-            deltaGazeX = 1e3 * DampingGazeMotion(deltaGazeX);
-            deltaGazeY = 1e3 * DampingGazeMotion(deltaGazeY);
+            deltaGazeX = 30.f * DampingGazeMotion(deltaGazeX);
+            deltaGazeY = 10.f * DampingGazeMotion(deltaGazeY);
 
             // Ceil the values, in case something went wrong
-            float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
-            float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
+            float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+            float pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
 
             viewangles[YAW] -= yawOff;
             viewangles[PITCH] += pitchOff;
@@ -1245,8 +1245,8 @@ void idUsercmdGenLocal::MakeCurrent()
     cmd.mx = continuousMouseX;
     cmd.my = continuousMouseY;
 
-    cmd.gazex = gazex;
-    cmd.gazey = gazey;
+    cmd.gazex = short(gazex);
+    cmd.gazey = short(gazey);
 
     impulseSequence = cmd.impulseSequence;
     impulse = cmd.impulse;

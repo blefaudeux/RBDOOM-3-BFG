@@ -97,6 +97,9 @@ public:
 		angles[0] = 0;
 		angles[1] = 0;
 		angles[2] = 0;
+
+        gazex = 0;
+        gazey = 0;
 	}
 	
 	// Syncronized

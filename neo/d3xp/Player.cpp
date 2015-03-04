@@ -1473,7 +1473,9 @@ idPlayer::idPlayer():
     spawnAnglesSet			= false;
     spawnAngles				= ang_zero;
     viewAngles				= ang_zero;
+    viewGazeAngles          = ang_zero;
     cmdAngles				= ang_zero;
+
     independentWeaponPitchAngle = 0.0f;
 
     oldButtons				= 0;
@@ -8861,7 +8863,7 @@ void idPlayer::Think()
     // Update the current gaze angles
     if ( usercmd.gazex > 0 )
     {
-        float const overallHalfAngleOfView = 0.7f; // 40deg half angle in radians
+        float const overallHalfAngleOfView = 40.f; // 40deg half angle in radians
 
         static int halfWidth = renderSystem->GetWidth()>>1;
         static int halfHeight = renderSystem->GetHeight()>>1;
@@ -8869,7 +8871,7 @@ void idPlayer::Think()
         static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
         static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
 
-        // idLib::Printf( "Gaze twist : %d  %d\n", usercmd.gazex, usercmd.gazey );
+        idLib::Printf( "Gaze twist : %d  %d\n", gazeYaw, gazePitch );
 
         viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
     }
