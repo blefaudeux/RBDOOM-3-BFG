@@ -1540,10 +1540,7 @@ void idWeapon::UpdateFlashPosition()
 
         // The flashlight follows loosely the point of gaze
 #if defined(USE_TET)
-        idAngles const & gazeTwist = owner->GetViewGazeAngles();
-
-        idLib::Printf( "Gaze twist : %f  %f\n", gazeTwist.yaw, gazeTwist.pitch );
-        adjustAng += gazeTwist;
+        adjustAng += owner->GetViewGazeAngles();
 #endif
 
         muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;

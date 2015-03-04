@@ -8859,15 +8859,20 @@ void idPlayer::Think()
 
 #if defined(USE_TET)
     // Update the current gaze angles
-    float const overallHalfAngleOfView = 40.f * 180 / 3.15;
+    if ( usercmd.gazex > 0 )
+    {
+        float const overallHalfAngleOfView = 0.7f; // 40deg half angle in radians
 
-    static int halfWidth = renderSystem->GetWidth()>>1;
-    static int halfHeight = renderSystem->GetHeight()>>1;
+        static int halfWidth = renderSystem->GetWidth()>>1;
+        static int halfHeight = renderSystem->GetHeight()>>1;
 
-    static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
-    static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
+        static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
+        static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
 
-    viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
+        // idLib::Printf( "Gaze twist : %d  %d\n", usercmd.gazex, usercmd.gazey );
+
+        viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
+    }
 #endif
 
     if( mountedObject )
