@@ -8857,6 +8857,19 @@ void idPlayer::Think()
         oldImpulseSequence = usercmd.impulseSequence;
     }
 
+#if defined(USE_TET)
+    // Update the current gaze angles
+    float const overallHalfAngleOfView = 40.f * 180 / 3.15;
+
+    static int halfWidth = renderSystem->GetWidth()>>1;
+    static int halfHeight = renderSystem->GetHeight()>>1;
+
+    static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
+    static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
+
+    viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
+#endif
+
     if( mountedObject )
     {
         usercmd.forwardmove = 0;

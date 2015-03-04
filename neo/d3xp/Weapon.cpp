@@ -1540,19 +1540,10 @@ void idWeapon::UpdateFlashPosition()
 
         // The flashlight follows loosely the point of gaze
 #if defined(USE_TET)
-        idAngles gazeTwist = ang_zero;
-        float const overallHalfAngleOfView = 40.f * 180 / 3.15;
+        idAngles const & gazeTwist = owner->GetViewGazeAngles();
 
-        static int halfWidth = renderSystem->GetWidth()>>1;
-        static int halfHeight = renderSystem->GetHeight()>>1;
-
-        static float deltaYaw = ( owner->usercmd.gazex - halfWidth ) / halfWidth;
-        static float deltaPitch = ( owner->usercmd.gazey - halfHeight ) / halfHeight;
-
-        idLib::Printf("Gaze twist : %f  %f\n", deltaYaw, deltaPitch);
-
-        gazeTwist.Set( deltaPitch * overallHalfAngleOfView, deltaYaw * overallHalfAngleOfView, 0.f);
-//        adjustAng += gazeTwist;
+        idLib::Printf( "Gaze twist : %f  %f\n", gazeTwist.yaw, gazeTwist.pitch );
+        adjustAng += gazeTwist;
 #endif
 
         muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
