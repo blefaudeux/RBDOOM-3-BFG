@@ -5970,9 +5970,6 @@ void idPlayer::UpdateFlashlight()
         idAnimatedEntity* worldModel = flashlight.GetEntity()->GetWorldModel();
         worldModel->BindToJoint( this, "Chest", true );
 
-        // TODO: Ben - Bind the flashlight to the gaze here
-        // Commands are stored in usercmd, gaze info should be propagated there
-
         // Don't interpolate the flashlight world model in mp, let it bind like normal.
         worldModel->SetUseClientInterpolation( false );
 
@@ -8997,7 +8994,7 @@ void idPlayer::Think()
     // position the view weapon, among other things
     CalculateFirstPersonView();
 
-    // this may use firstPersonView, or a thirdPeroson / camera view
+    // this may use firstPersonView, or a thirdPerson / camera view
     CalculateRenderView();
 
     inventory.UpdateArmor();

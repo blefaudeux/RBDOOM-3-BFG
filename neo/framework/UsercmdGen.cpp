@@ -552,21 +552,6 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
     float activeWindow = 0.3f; // (from 0 to 0.5, portion of the screen on the side turned off)
 
-    /*
-    // Use Tukey weight function
-    float weight;
-    if ( std::abs(gazeDiff) < activeWindow )
-    {
-        weight =  (1.f - std::pow( 1 - std::pow(gazeDiff/activeWindow, 2.f), 2.f));
-    }
-    else
-    {
-        weight = 1.f;
-    }
-
-    return weight * sgn(gazeDiff);
-    */
-
     // Custom crafted weight function instead :
     if ( std::abs( gazeDiff) < activeWindow )
     {
@@ -574,7 +559,7 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
     }
     else
     {
-        return sgn(gazeDiff) * std::abs( gazeDiff - activeWindow);
+        return sgn(gazeDiff) * ( gazeDiff - activeWindow) * ( gazeDiff - activeWindow);
     }
 }
 
