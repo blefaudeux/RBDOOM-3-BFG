@@ -132,7 +132,9 @@ struct gaze_poll_t
     }
 };
 
-idGaze * gazeListener = NULL;
+#if defined(USE_TET)
+    idGaze * gazeListener = NULL;
+#endif
 
 static idList<kbd_poll_t> kbd_polls;
 static idList<mouse_poll_t> mouse_polls;
@@ -725,12 +727,13 @@ void Sys_InitInput()
 	}
 	// WM0110
 
-
+#if defined(USE_TET)
     // Open the gaze coordinates poll
     if (gazeListener == NULL )
     {
         gazeListener = new idGaze();
     }
+#endif
 }
 
 /*
@@ -758,11 +761,14 @@ void Sys_ShutdownInput()
 		common->Printf( "Sys_ShutdownInput: SDL joystick not initialized. Nothing to close.\n" );
 	}
 
+#if defined(USE_TET)
     // Close the eye tracker polling service
     if ( gazeListener )
     {
         delete gazeListener;
     }
+#endif
+
 }
 
 /*
@@ -1651,7 +1657,7 @@ sysEvent_t Sys_GetEvent()
 				continue; // just handle next event
 		}
 	}
-	
+
 	res = no_more_events;
 	return res;
 }
@@ -1753,6 +1759,7 @@ int Sys_PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] )
 
 int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
 {
+#if defined(USE_TET)
     // Unstack the gaze events
     int numEvents = gazeListener->m_gazePoints.Num();
 
@@ -1770,6 +1777,9 @@ int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
     }
 
     gazeListener->m_gazePoints.SetNum( 0 );
+#else
+    int numEvents = 0;
+#endif
 
     return numEvents;
 }

@@ -51,7 +51,8 @@ idCVar joy_dampenLook( "joy_dampenLook", "1", CVAR_BOOL | CVAR_ARCHIVE, "Do not 
 idCVar joy_deltaPerMSLook( "joy_deltaPerMSLook", "0.003", CVAR_FLOAT | CVAR_ARCHIVE, "Max amount to be added on look per MS" );
 
 idCVar in_mouseSpeed( "in_mouseSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the mouse moves", 0.25f, 4.0f );
-idCVar in_gazeSpeed( "in_gazeSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the pov follows the gaze moves", 0.1f, 10.0f );
+idCVar in_gazeSpeed( "in_gazeSpeed", "1",	CVAR_ARCHIVE | CVAR_FLOAT, "speed at which the pov follows the gaze moves", 0.1f, 100.0f );
+idCVar in_gazePoint( "in_gazePoint", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "display gaze point" );
 
 idCVar in_alwaysRun( "in_alwaysRun", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP" );
 
@@ -549,20 +550,17 @@ template <typename T> int sgn(T val) {
 
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
-    float activeWindow = 0.7f; // (from 0 to 1, portion of the screen on the side turned off)
+    float activeWindow = 0.3f; // (from 0 to 0.5, portion of the screen on the side turned off)
 
-    // Use Tukey weight function
-    float weight;
-    if ( std::abs(gazeDiff) < activeWindow )
+    // Custom crafted weight function instead :
+    if ( std::abs( gazeDiff) < activeWindow )
     {
-        weight =  (1.f - std::pow( 1 - std::pow(gazeDiff/activeWindow, 2.f), 2.f));
+        return 0.;
     }
     else
     {
-        weight = 1.f;
+        return sgn(gazeDiff) * ( gazeDiff - activeWindow) * ( gazeDiff - activeWindow);
     }
-
-    return weight * sgn(gazeDiff);
 }
 
 /*
@@ -578,22 +576,23 @@ void idUsercmdGenLocal::GazeMove()
         // Referential is +-0.5
         int const screenWidthHalf = renderSystem->GetWidth()>>1;
         int const screenHeightHalf = renderSystem->GetHeight()>>1;
+        float const deadZone = 0.8;
 
+        if ( gazey < renderSystem->GetHeight() * deadZone)
+        {
+            float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
+            float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-        float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
-        float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
+            deltaGazeX = 30.f * DampingGazeMotion(deltaGazeX);
+            deltaGazeY = 10.f * DampingGazeMotion(deltaGazeY);
 
-//        common->Printf(" gaze %d %d - deltaGaze %f %f\n", gazex, gazey, deltaGazeX, deltaGazeY);
+            // Ceil the values, in case something went wrong
+            float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+            float pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
 
-        deltaGazeX = 100 * DampingGazeMotion(deltaGazeX);
-        deltaGazeY = 30 * DampingGazeMotion(deltaGazeY);
-
-        // Ceil the values, in case something went wrong
-        float yawOff = std::min( std::max( m_yaw.GetFloat() * deltaGazeX * in_gazeSpeed.GetFloat(), -1.f), 1.f);
-        float pitchOff = std::min( std::max( m_pitch.GetFloat() * deltaGazeY * in_gazeSpeed.GetFloat(), -1.f), 1.f );
-
-        viewangles[YAW] -= yawOff;
-        viewangles[PITCH] += pitchOff;
+            viewangles[YAW] -= yawOff;
+            viewangles[PITCH] += pitchOff;
+        }
     }
 }
 
@@ -933,16 +932,14 @@ DrawJoypadTexture
 Draws axis and threshold / range rings into an RGBA image
 =================
 */
-void	DrawJoypadTexture(
-	const int	size,
-	byte	image[],
-	
-	const idVec2 raw,
-	
-	const float threshold,
-	const float range,
-	const transferFunction_t shape,
-	const bool	mergedThreshold )
+
+void	DrawJoypadTexture( const int	size,
+                           byte	image[],
+                           const idVec2 raw,
+                           const float threshold,
+                           const float range,
+                           const transferFunction_t shape,
+                           const bool	mergedThreshold )
 {
 
     //	assert( raw.x >= -1.0f && raw.x <= 1.0f && raw.y >= -1.0f && raw.y <= 1.0f );
@@ -1249,9 +1246,11 @@ void idUsercmdGenLocal::MakeCurrent()
     cmd.mx = continuousMouseX;
     cmd.my = continuousMouseY;
 
+    cmd.gazex = short(gazex);
+    cmd.gazey = short(gazey);
+
     impulseSequence = cmd.impulseSequence;
     impulse = cmd.impulse;
-
 }
 
 /*
@@ -1417,63 +1416,63 @@ idUsercmdGenLocal::Mouse
 */
 void idUsercmdGenLocal::Mouse()
 {
-	int	mouseEvents[MAX_MOUSE_EVENTS][2];
-	
-	int numEvents = Sys_PollMouseInputEvents( mouseEvents );
-	
-	// Study each of the buffer elements and process them.
-	for( int i = 0; i < numEvents; i++ )
-	{
-		int action = mouseEvents[i][0];
-		int value = mouseEvents[i][1];
-		switch( action )
-		{
-			case M_ACTION1:
-			case M_ACTION2:
-			case M_ACTION3:
-			case M_ACTION4:
-			case M_ACTION5:
-			case M_ACTION6:
-			case M_ACTION7:
-			case M_ACTION8:
-			
-			// DG: support some more mouse buttons
-			case M_ACTION9:
-			case M_ACTION10:
-			case M_ACTION11:
-			case M_ACTION12:
-			case M_ACTION13:
-			case M_ACTION14:
-			case M_ACTION15:
-			case M_ACTION16: // DG end
-				mouseButton = K_MOUSE1 + ( action - M_ACTION1 );
-				mouseDown = ( value != 0 );
-				Key( mouseButton, mouseDown );
-				break;
-			case M_DELTAX:
-				mouseDx += value;
-				continuousMouseX += value;
-				break;
-			case M_DELTAY:
-				mouseDy += value;
-				continuousMouseY += value;
-				break;
-			case M_DELTAZ:	// mouse wheel, may have multiple clicks
-			{
-				int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
-				value = abs( value );
-				while( value-- > 0 )
-				{
-					Key( key, true );
-					Key( key, false );
-					mouseButton = key;
-					mouseDown = true;
-				}
-			}
-			break;
-			default:	// some other undefined button
-				break;
-		}
+    int	mouseEvents[MAX_MOUSE_EVENTS][2];
+
+    int numEvents = Sys_PollMouseInputEvents( mouseEvents );
+
+    // Study each of the buffer elements and process them.
+    for( int i = 0; i < numEvents; i++ )
+    {
+        int action = mouseEvents[i][0];
+        int value = mouseEvents[i][1];
+        switch( action )
+        {
+            case M_ACTION1:
+            case M_ACTION2:
+            case M_ACTION3:
+            case M_ACTION4:
+            case M_ACTION5:
+            case M_ACTION6:
+            case M_ACTION7:
+            case M_ACTION8:
+
+                // DG: support some more mouse buttons
+            case M_ACTION9:
+            case M_ACTION10:
+            case M_ACTION11:
+            case M_ACTION12:
+            case M_ACTION13:
+            case M_ACTION14:
+            case M_ACTION15:
+            case M_ACTION16: // DG end
+                mouseButton = K_MOUSE1 + ( action - M_ACTION1 );
+                mouseDown = ( value != 0 );
+                Key( mouseButton, mouseDown );
+                break;
+            case M_DELTAX:
+                mouseDx += value;
+                continuousMouseX += value;
+                break;
+            case M_DELTAY:
+                mouseDy += value;
+                continuousMouseY += value;
+                break;
+            case M_DELTAZ:	// mouse wheel, may have multiple clicks
+                {
+                    int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
+                    value = abs( value );
+                    while( value-- > 0 )
+                    {
+                        Key( key, true );
+                        Key( key, false );
+                        mouseButton = key;
+                        mouseDown = true;
+                    }
+                }
+                break;
+            default:	// some other undefined button
+                break;
+        }
     }
 }
 

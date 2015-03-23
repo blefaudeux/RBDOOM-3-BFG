@@ -1537,7 +1537,17 @@ void idWeapon::UpdateFlashPosition()
 		idAngles bobAngles = owner->GetViewBobAngles();
 		SwapValues( bobAngles.pitch, bobAngles.roll );
 		adjustAng += bobAngles * 3.0f;
-		muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
+
+        // The flashlight follows loosely the point of gaze
+#if defined(USE_TET)
+        idAngles const & gazeViewAngles = owner->GetViewGazeAngles();
+
+        idLib::Printf("Offsetting torch by : %.3f %.3f\n", gazeViewAngles.yaw, gazeViewAngles.pitch );
+
+        adjustAng += gazeViewAngles;
+#endif
+
+        muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
 	}
 	
 	// if the desired point is inside or very close to a wall, back it up until it is clear

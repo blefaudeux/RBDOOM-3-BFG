@@ -739,6 +739,12 @@ public:
 	{
 		return viewBobAngles;
 	}
+
+    const idAngles &        GetViewGazeAngles()
+    {
+        return viewGazeAngles;
+    }
+
 	const idVec3& 			GetViewBob()
 	{
 		return viewBob;
@@ -818,6 +824,7 @@ private:
 	bool					legsForward;
 	float					oldViewYaw;
 	idAngles				viewBobAngles;
+    idAngles                viewGazeAngles;
 	idVec3					viewBob;
 	int						landChange;
 	int						landTime;
