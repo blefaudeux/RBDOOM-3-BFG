@@ -8863,15 +8863,19 @@ void idPlayer::Think()
     // Update the current gaze angles
     if ( usercmd.gazex > 0 )
     {
-        float const overallHalfAngleOfView = 40.f; // 40deg half angle in radians
+        static float overallHalfAngleOfView = 100.f;
 
-        static int halfWidth = renderSystem->GetWidth()>>1;
-        static int halfHeight = renderSystem->GetHeight()>>1;
+        static short halfWidth = renderSystem->GetWidth()/2;
+        static short halfHeight = renderSystem->GetHeight()/2;
 
-        static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
-        static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
+        float gazeYaw = -float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
+        float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
 
         viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
+    }
+    else
+    {
+        viewGazeAngles.Set( 0.0f, 0.0f, 0.0f);
     }
 #endif
 

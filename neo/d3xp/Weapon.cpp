@@ -1527,10 +1527,10 @@ void idWeapon::UpdateFlashPosition()
 		static float pscale = 2.0f;
 		static float yscale = 0.25f;
 		
-// 		static idVec3 baseAdjustPos = vec3_zero;	//idVec3( 0.0f, 10.0f, 0.0f );
-// 		idVec3 adjustPos = baseAdjustPos;
-//		muzzleFlash.origin += adjustPos.x * muzzleFlash.axis[1] + adjustPos.y * muzzleFlash.axis[0] + adjustPos.z * muzzleFlash.axis[2];
-		muzzleFlash.origin += owner->GetViewBob();
+//        static idVec3 baseAdjustPos = vec3_zero;	//idVec3( 0.0f, 10.0f, 0.0f );
+//        idVec3 adjustPos = baseAdjustPos;
+//        muzzleFlash.origin += adjustPos.x * muzzleFlash.axis[1] + adjustPos.y * muzzleFlash.axis[0] + adjustPos.z * muzzleFlash.axis[2];
+        muzzleFlash.origin += owner->GetViewBob();
 		
 //		static idAngles baseAdjustAng = ang_zero;	//idAngles( 0.0f, 10.0f, 0.0f );
 		idAngles adjustAng = /*baseAdjustAng +*/ idAngles( fraccos * yscale, 0.0f, fraccos2 * pscale );
@@ -1538,13 +1538,10 @@ void idWeapon::UpdateFlashPosition()
 		SwapValues( bobAngles.pitch, bobAngles.roll );
 		adjustAng += bobAngles * 3.0f;
 
-        // The flashlight follows loosely the point of gaze
 #if defined(USE_TET)
-        idAngles const & gazeViewAngles = owner->GetViewGazeAngles();
-
-        idLib::Printf("Offsetting torch by : %.3f %.3f\n", gazeViewAngles.yaw, gazeViewAngles.pitch );
-
-        adjustAng += gazeViewAngles;
+        // The flashlight follows loosely the point of gaze
+        idAngles const & gazeViewAngles = this->GetOwner()->GetViewGazeAngles();
+        adjustAng += gazeViewAngles * 3.f;
 #endif
 
         muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
