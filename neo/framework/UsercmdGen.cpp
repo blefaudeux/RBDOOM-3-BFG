@@ -934,15 +934,15 @@ Draws axis and threshold / range rings into an RGBA image
 =================
 */
 void	DrawJoypadTexture(
-        const int	size,
-        byte	image[],
-
-        const idVec2 raw,
-
-        const float threshold,
-        const float range,
-        const transferFunction_t shape,
-        const bool	mergedThreshold )
+	const int	size,
+	byte	image[],
+	
+	const idVec2 raw,
+	
+	const float threshold,
+	const float range,
+	const transferFunction_t shape,
+	const bool	mergedThreshold )
 {
 
     //	assert( raw.x >= -1.0f && raw.x <= 1.0f && raw.y >= -1.0f && raw.y <= 1.0f );
@@ -1417,53 +1417,63 @@ idUsercmdGenLocal::Mouse
 */
 void idUsercmdGenLocal::Mouse()
 {
-    int	mouseEvents[MAX_MOUSE_EVENTS][2];
-
-    int numEvents = Sys_PollMouseInputEvents( mouseEvents );
-
-    // Study each of the buffer elements and process them.
-    for( int i = 0; i < numEvents; i++ )
-    {
-        int action = mouseEvents[i][0];
-        int value = mouseEvents[i][1];
-        switch( action )
-        {
-            case M_ACTION1:
-            case M_ACTION2:
-            case M_ACTION3:
-            case M_ACTION4:
-            case M_ACTION5:
-            case M_ACTION6:
-            case M_ACTION7:
-            case M_ACTION8:
-                mouseButton = K_MOUSE1 + ( action - M_ACTION1 );
-                mouseDown = ( value != 0 );
-                Key( mouseButton, mouseDown );
-                break;
-            case M_DELTAX:
-                mouseDx += value;
-                continuousMouseX += value;
-                break;
-            case M_DELTAY:
-                mouseDy += value;
-                continuousMouseY += value;
-                break;
-            case M_DELTAZ:	// mouse wheel, may have multiple clicks
-                {
-                    int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
-                    value = abs( value );
-                    while( value-- > 0 )
-                    {
-                        Key( key, true );
-                        Key( key, false );
-                        mouseButton = key;
-                        mouseDown = true;
-                    }
-                }
-                break;
-            default:	// some other undefined button
-                break;
-        }
+	int	mouseEvents[MAX_MOUSE_EVENTS][2];
+	
+	int numEvents = Sys_PollMouseInputEvents( mouseEvents );
+	
+	// Study each of the buffer elements and process them.
+	for( int i = 0; i < numEvents; i++ )
+	{
+		int action = mouseEvents[i][0];
+		int value = mouseEvents[i][1];
+		switch( action )
+		{
+			case M_ACTION1:
+			case M_ACTION2:
+			case M_ACTION3:
+			case M_ACTION4:
+			case M_ACTION5:
+			case M_ACTION6:
+			case M_ACTION7:
+			case M_ACTION8:
+			
+			// DG: support some more mouse buttons
+			case M_ACTION9:
+			case M_ACTION10:
+			case M_ACTION11:
+			case M_ACTION12:
+			case M_ACTION13:
+			case M_ACTION14:
+			case M_ACTION15:
+			case M_ACTION16: // DG end
+				mouseButton = K_MOUSE1 + ( action - M_ACTION1 );
+				mouseDown = ( value != 0 );
+				Key( mouseButton, mouseDown );
+				break;
+			case M_DELTAX:
+				mouseDx += value;
+				continuousMouseX += value;
+				break;
+			case M_DELTAY:
+				mouseDy += value;
+				continuousMouseY += value;
+				break;
+			case M_DELTAZ:	// mouse wheel, may have multiple clicks
+			{
+				int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
+				value = abs( value );
+				while( value-- > 0 )
+				{
+					Key( key, true );
+					Key( key, false );
+					mouseButton = key;
+					mouseDown = true;
+				}
+			}
+			break;
+			default:	// some other undefined button
+				break;
+		}
     }
 }
 
