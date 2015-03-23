@@ -8871,8 +8871,6 @@ void idPlayer::Think()
         static float gazeYaw = float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
         static float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
 
-        idLib::Printf( "Gaze twist : %d  %d\n", gazeYaw, gazePitch );
-
         viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
     }
 #endif
