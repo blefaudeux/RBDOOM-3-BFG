@@ -1541,7 +1541,7 @@ void idWeapon::UpdateFlashPosition()
 #if defined(USE_TET)
         // The flashlight follows loosely the point of gaze
         idAngles const & gazeViewAngles = this->GetOwner()->GetViewGazeAngles();
-        adjustAng += gazeViewAngles * 3.f;
+        adjustAng += gazeViewAngles;
 #endif
 
         muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;

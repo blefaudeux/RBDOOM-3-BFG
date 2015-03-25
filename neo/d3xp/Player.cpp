@@ -8860,22 +8860,19 @@ void idPlayer::Think()
     }
 
 #if defined(USE_TET)
-    // Update the current gaze angles
+    // Update the current gaze angles (else keep the previous ones)
     if ( usercmd.gazex > 0 )
     {
-        static float overallHalfAngleOfView = 100.f;
+        static float hHalfAngleOfView = 65.f;
+        static float vHalfAngleOfView = 35.f;
 
         static short halfWidth = renderSystem->GetWidth()/2;
         static short halfHeight = renderSystem->GetHeight()/2;
 
-        float gazeYaw = -float( usercmd.gazex - halfWidth ) / halfWidth * overallHalfAngleOfView;
-        float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * overallHalfAngleOfView;
+        float gazeYaw = -float( usercmd.gazex - halfWidth ) / halfWidth * hHalfAngleOfView;
+        float gazePitch = float( usercmd.gazey - halfHeight ) / halfHeight * vHalfAngleOfView;
 
-        viewGazeAngles.Set( gazePitch, gazeYaw, 0.0f);
-    }
-    else
-    {
-        viewGazeAngles.Set( 0.0f, 0.0f, 0.0f);
+        viewGazeAngles.Set( gazeYaw, 0.0f, gazePitch);
     }
 #endif
 

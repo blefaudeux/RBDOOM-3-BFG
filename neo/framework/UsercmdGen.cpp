@@ -550,7 +550,7 @@ template <typename T> int sgn(T val) {
 
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
-    float activeWindow = 0.3f; // (from 0 to 0.5, portion of the screen on the side turned off)
+    float activeWindow = 0.4f; // (from 0 to 0.5, portion of the screen on the side turned off)
 
     // Custom crafted weight function instead :
     if ( std::abs( gazeDiff) < activeWindow )
@@ -576,9 +576,12 @@ void idUsercmdGenLocal::GazeMove()
         // Referential is +-0.5
         int const screenWidthHalf = renderSystem->GetWidth()>>1;
         int const screenHeightHalf = renderSystem->GetHeight()>>1;
-        float const deadZone = 0.8;
+        static float vDeadZone = 0.8;
+        static float hDeadZoneL = 0.3;
+        static float hDeadZoneR = 0.7;
 
-        if ( gazey < renderSystem->GetHeight() * deadZone)
+        if ( gazey < renderSystem->GetHeight() * vDeadZone ||
+             (gazex > renderSystem->GetWidth() * hDeadZoneL && gazex < renderSystem->GetWidth() * hDeadZoneR) )
         {
             float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
             float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
