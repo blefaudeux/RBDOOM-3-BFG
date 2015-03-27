@@ -586,8 +586,8 @@ void idUsercmdGenLocal::GazeMove()
             float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
             float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-            deltaGazeX = 30.f * DampingGazeMotion(deltaGazeX);
-            deltaGazeY = 10.f * DampingGazeMotion(deltaGazeY);
+            deltaGazeX = 300.f * DampingGazeMotion(deltaGazeX);
+            deltaGazeY = 100.f * DampingGazeMotion(deltaGazeY);
 
             // Ceil the values, in case something went wrong
             float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
