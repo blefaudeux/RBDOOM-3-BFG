@@ -588,11 +588,11 @@ void idUsercmdGenLocal::GazeMove()
 
         bool noMotion = cmd.forwardmove == 0;
 
+        float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
+        float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
+
         if (noMotion)
         {
-            float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
-            float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
-
             if ( gazey < renderSystem->GetHeight() * vDeadZone ||
                  (gazex > renderSystem->GetWidth() * hDeadZoneL && gazex < renderSystem->GetWidth() * hDeadZoneR) )
             {
@@ -600,8 +600,8 @@ void idUsercmdGenLocal::GazeMove()
                 deltaGazeY = 100.f * DampingGazeMotion(deltaGazeY);
 
                 // Ceil the values, in case something went wrong
-                float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
-                float pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
+                float const yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+                float const pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
 
                 viewangles[YAW] -= yawOff;
                 viewangles[PITCH] += pitchOff;
@@ -613,8 +613,8 @@ void idUsercmdGenLocal::GazeMove()
             deltaGazeY = 100.f * deltaGazeY;
 
             // Ceil the values, in case something went wrong
-            float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
-            float pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
+            float const yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+            float const pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
 
             viewangles[YAW] -= yawOff;
             viewangles[PITCH] += pitchOff;
