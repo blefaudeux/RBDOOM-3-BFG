@@ -548,6 +548,7 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+// Ben - this should be a simple lambda function..
 float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
 {
     float activeWindow = 0.4f; // (from 0 to 0.5, portion of the screen on the side turned off)
@@ -570,6 +571,11 @@ idUsercmdGenLocal::GazeMove
 */
 void idUsercmdGenLocal::GazeMove()
 {
+    // Different behaviours depending on the motion state :
+    // - in motion, the gaze drives the point of view
+    // - while standing still, the gaze just pans the view at the edge
+
+
     if ( gazex != -1 )
     {
         // Compute the point-of-view change based on the gaze pose here
@@ -580,14 +586,31 @@ void idUsercmdGenLocal::GazeMove()
         static float hDeadZoneL = 0.3;
         static float hDeadZoneR = 0.7;
 
-        if ( gazey < renderSystem->GetHeight() * vDeadZone ||
-             (gazex > renderSystem->GetWidth() * hDeadZoneL && gazex < renderSystem->GetWidth() * hDeadZoneR) )
+        bool noMotion = cmd.forwardmove == 0;
+
+        if (noMotion)
         {
             float deltaGazeX = float( gazex - screenWidthHalf) / screenWidthHalf;
             float deltaGazeY = float( gazey - screenHeightHalf) / screenHeightHalf;
 
-            deltaGazeX = 300.f * DampingGazeMotion(deltaGazeX);
-            deltaGazeY = 100.f * DampingGazeMotion(deltaGazeY);
+            if ( gazey < renderSystem->GetHeight() * vDeadZone ||
+                 (gazex > renderSystem->GetWidth() * hDeadZoneL && gazex < renderSystem->GetWidth() * hDeadZoneR) )
+            {
+                deltaGazeX = 300.f * DampingGazeMotion(deltaGazeX);
+                deltaGazeY = 100.f * DampingGazeMotion(deltaGazeY);
+
+                // Ceil the values, in case something went wrong
+                float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+                float pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
+
+                viewangles[YAW] -= yawOff;
+                viewangles[PITCH] += pitchOff;
+            }
+        }
+        else
+        {
+            deltaGazeX = 300.f * deltaGazeX;
+            deltaGazeY = 100.f * deltaGazeY;
 
             // Ceil the values, in case something went wrong
             float yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
@@ -1198,9 +1221,8 @@ void idUsercmdGenLocal::MakeCurrent()
         toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() && common->IsMultiplayer() );
         toggled_zoom.SetKeyState( ButtonState( UB_ZOOM ), in_toggleZoom.GetBool() );
 
-        // get basic movement from mouse and gaze
+        // get basic movement from mouse
         MouseMove();
-        GazeMove();
 
         // get basic movement from joystick and set key bits
         // must be done before CmdButtons!
@@ -1221,6 +1243,9 @@ void idUsercmdGenLocal::MakeCurrent()
 
         // get basic movement from keyboard
         KeyMove();
+
+        // get the gaze motion
+        GazeMove();
 
         // aim assist
         AimAssist();
