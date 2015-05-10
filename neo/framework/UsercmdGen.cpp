@@ -609,15 +609,15 @@ void idUsercmdGenLocal::GazeMove()
         }
         else
         {
-            deltaGazeX = 300.f * deltaGazeX;
-            deltaGazeY = 100.f * deltaGazeY;
+//            deltaGazeX = 30.f * deltaGazeX;
+//            deltaGazeY = 10.f * deltaGazeY;
 
-            // Ceil the values, in case something went wrong
-            float const yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
-            float const pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
+//            // Ceil the values, in case something went wrong
+//            float const yawOff = std::min( std::max( deltaGazeX * in_gazeSpeed.GetFloat(), -1.5f), 1.5f);
+//            float const pitchOff = std::min( std::max( deltaGazeY * in_gazeSpeed.GetFloat(), -1.5f), 1.5f );
 
-            viewangles[YAW] -= yawOff;
-            viewangles[PITCH] += pitchOff;
+//            viewangles[YAW] -= yawOff;
+//            viewangles[PITCH] += pitchOff;
         }
     }
 }
