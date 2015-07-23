@@ -7,8 +7,11 @@ option(USE_MFC_TOOLS
         "Compile the built-in MFC based tools" OFF)
 
 option(MONOLITH
-        "Embed game logic into main executable" ON)
+		"Embed game logic into main executable" ON)
 
+option(USE_PRECOMPILED_HEADERS
+		"Use precompiled headers during build" ON)
+		
 option(SDL2
     "Use SDL2 instead of SDL1.2" ON)
 
@@ -39,6 +42,12 @@ option(USE_SYSTEM_LIBGLEW
 option(USE_TET_GAZE
                 "Use The Eye Tribe eye tracker" OFF )
 
+set(CPU_TYPE "" CACHE STRING "When set, passes this string as CPU-ID which will be embedded into the binary.")
+
+set(CPU_OPTIMIZATION "-mmmx -msse -msse2" CACHE STRING "Which CPU specific optimitations should be used beside the compiler's default?")
+
+option(USE_INTRINSICS "Compile using intrinsics (e.g mmx, sse, msse2)" ON)
+
 if(UNIX)
     set(OPENAL TRUE)
 endif()
@@ -60,52 +69,60 @@ else()
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    add_definitions(-pipe)
-    #add_definitions(-Wall)
-    add_definitions(-Werror=format-security)
-    add_definitions(-Werror=format)
-    add_definitions(-mmmx -msse -msse2)
-    if(WIN32)
-        # require msvcr70.dll or newer for _aligned_malloc etc
-        # I think it is from Visual C++ .NET 2002, so it should be available on any remotely modern system.
-        add_definitions(-D__MSVCRT_VERSION__=0x0700)
+	add_definitions(-pipe)
+	#add_definitions(-Wall)
+	add_definitions(-Werror=format-security)
+	add_definitions(-Werror=format)
+	if(CPU_TYPE)
+		add_definitions(-DCPUSTRING="${CPU_TYPE}")
+	endif()
+	if (CPU_OPTIMIZATION)
+		add_definitions(${CPU_OPTIMIZATION})
+	endif()
+	if (USE_INTRINSICS)
+		add_definitions(-DUSE_INTRINSICS)
+	endif()
+	if(WIN32)
+		# require msvcr70.dll or newer for _aligned_malloc etc
+		# I think it is from Visual C++ .NET 2002, so it should be available on any remotely modern system.
+		add_definitions(-D__MSVCRT_VERSION__=0x0700)
+		
+		find_package(DirectX REQUIRED)
+		include_directories(libs/mingw-hacks)
+		include_directories(${DirectX_INCLUDE_DIR})
+		add_definitions(-DUSE_XINPUT)
+	endif()	
+	
+	#if(NOT ANDROID)
+		add_definitions(-DUSE_EXCEPTIONS)
+	#endif()
+	
+	# the warnings are used for every profile anyway, so put them in a variable
+	set(my_warn_flags "-Wno-pragmas -Wno-unused-variable -Wno-switch -Wno-unused-value -Winvalid-pch -Wno-multichar")
+	
+	if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+		# append clang-specific settings for warnings (the second one make sure clang doesn't complain
+		# about unknown -W flags, like -Wno-unused-but-set-variable)
+		set(my_warn_flags "${my_warn_flags} -Wno-local-type-template-args -Wno-unknown-warning-option -Wno-inline-new-delete -Wno-switch-enum")
+	endif()
+	
+	if(NOT CMAKE_CROSSCOMPILING AND ONATIVE)
+		add_definitions(-march=native)
+	endif()
 
-        find_package(DirectX REQUIRED)
-        include_directories(libs/mingw-hacks)
-        include_directories(${DirectX_INCLUDE_DIR})
-        add_definitions(-DUSE_XINPUT)
-    endif()
-
-    #if(NOT ANDROID)
-        add_definitions(-DUSE_EXCEPTIONS)
-    #endif()
-
-    # the warnings are used for every profile anyway, so put them in a variable
-    set(my_warn_flags "-Wno-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-switch -Wno-unused-value -Winvalid-pch -Wno-multichar")
-
-    if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        # append clang-specific settings for warnings (the second one make sure clang doesn't complain
-        # about unknown -W flags, like -Wno-unused-but-set-variable)
-        set(my_warn_flags "${my_warn_flags} -Wno-local-type-template-args -Wno-unknown-warning-option -Wno-inline-new-delete")
-    endif()
-
-    if(NOT CMAKE_CROSSCOMPILING AND ONATIVE)
-        add_definitions(-march=native)
-    endif()
-
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG -O0 -ggdb -fno-strict-aliasing ${my_warn_flags}")
-    #set(CMAKE_C_FLAGS_DEBUGALL "${CMAKE_C_FLAGS_DEBUGALL} -g -ggdb -D_DEBUG -fno-strict-aliasing ${my_warn_flags}")
-    #set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_PROFILE} -g -ggdb -D_DEBUG -O1 -fno-omit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
-    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -g -O3 -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
-    set(CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -Os -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
-
-    set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-    #set(CMAKE_CXX_FLAGS_DEBUGALL ${CMAKE_C_FLAGS_DEBUGALL})
-    #set(CMAKE_CXX_FLAGS_PROFILE ${CMAKE_C_FLAGS_PROFILE})
-    set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO})
-    set(CMAKE_CXX_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL})
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG -O0 -ggdb -fno-strict-aliasing ${my_warn_flags}")
+	#set(CMAKE_C_FLAGS_DEBUGALL "${CMAKE_C_FLAGS_DEBUGALL} -g -ggdb -D_DEBUG -fno-strict-aliasing ${my_warn_flags}")
+	#set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_PROFILE} -g -ggdb -D_DEBUG -O1 -fno-omit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
+	set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -g -O3 -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
+	set(CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -Os -ffast-math -fno-unsafe-math-optimizations -fomit-frame-pointer -fno-strict-aliasing ${my_warn_flags}")
+	
+	set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+	#set(CMAKE_CXX_FLAGS_DEBUGALL ${CMAKE_C_FLAGS_DEBUGALL})
+	#set(CMAKE_CXX_FLAGS_PROFILE ${CMAKE_C_FLAGS_PROFILE})
+	set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO})
+	set(CMAKE_CXX_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL})
 
 elseif(MSVC)
 
@@ -183,18 +200,23 @@ elseif(MSVC)
                 add_definitions(-DUSE_WINRT)
         endif()
 
-    if(NOT CMAKE_CL_64)
-        add_definitions(-D_USE_32BIT_TIME_T)
-    endif()
 
-    if(USE_MFC_TOOLS)
-        add_definitions(-D_AFXDLL)
-
-        # 0: Use Standard Windows Libraries
-        # 1: Use MFC in a Static Library
-        # 2: Use MFC in a Shared DLL
-        set(CMAKE_MFC_FLAG 2)
-    endif()
+        if (USE_INTRINSICS)
+                add_definitions(-DUSE_INTRINSICS)
+        endif()
+					
+	if(NOT CMAKE_CL_64)
+		add_definitions(-D_USE_32BIT_TIME_T)
+	endif()
+					
+	if(USE_MFC_TOOLS)
+		add_definitions(-D_AFXDLL)
+		
+		# 0: Use Standard Windows Libraries
+		# 1: Use MFC in a Static Library
+		# 2: Use MFC in a Shared DLL 
+		set(CMAKE_MFC_FLAG 2)
+	endif()
 endif()
 
 #if(STANDALONE)
@@ -1259,158 +1281,161 @@ include_directories(
 
 if(MSVC)
 
-    # if(MSVC_VERSION EQUAL 1700)
-        # set(DirectX_LIBRARIES
-            # dinput8
-            # dsound
-            # dxguid
-            # #dxerr
-            # Xinput
-            # xaudio2.lib
-            # )
 
-        # if(NOT OPENAL)
-            # list(APPEND DirectX_LIBRARIES xaudio2.lib)
-        # endif()
+	# if(MSVC_VERSION EQUAL 1700)
+		# set(DirectX_LIBRARIES
+			# dinput8
+			# dsound
+			# dxguid
+			# #dxerr
+			# Xinput
+			# xaudio2.lib
+			# )
+		
+		# if(NOT OPENAL)
+			# list(APPEND DirectX_LIBRARIES xaudio2.lib)
+		# endif()
+		
+	# else()
+		find_package(DirectX REQUIRED)
+		include_directories(${DirectX_INCLUDE_DIR})
+	#endif()
+	
+	if(OPENAL)
+		add_definitions(-DUSE_OPENAL)
+	
+		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
+		
+		if(CMAKE_CL_64)
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win64)
+		else()
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win32)
+		endif()
+		
+		list(APPEND RBDOOM3_INCLUDES ${OPENAL_INCLUDES})
+		list(APPEND RBDOOM3_SOURCES
+			${OPENAL_SOURCES}
+			${DOOMCLASSIC_OPENAL_SOURCES})
+		
+		set(OpenAL_LIBRARIES
+			OpenAL32)
+			
+		if(CMAKE_CL_64)
+			install(FILES libs/openal-soft/lib/win64/OpenAL64.dll DESTINATION .)
+		else()
+			install(FILES libs/openal-soft/lib/win32/OpenAL32.dll DESTINATION .)
+			install(FILES libs/openal-soft/lib/win32/OpenAL32.pdb DESTINATION .)
+		endif()
+	else()
+		list(APPEND RBDOOM3_INCLUDES ${XAUDIO2_INCLUDES})
+		list(APPEND RBDOOM3_SOURCES
+			${XAUDIO2_SOURCES}
+			${DOOMCLASSIC_XAUDIO2_SOURCES})
+	endif()
+	
+	if(FFMPEG)
+		add_definitions(-DUSE_FFMPEG)
+	
+		if(CMAKE_CL_64)
+			include_directories(libs/ffmpeg-win64/include)
+			include_directories(libs/ffmpeg-win64/include/libswscale)
+			include_directories(libs/ffmpeg-win64/include/libavformat)
+			include_directories(libs/ffmpeg-win64/include/libavdevice)
+			include_directories(libs/ffmpeg-win64/include/libavcodec)
+			
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win64/lib)
+		else()
+			include_directories(libs/ffmpeg-win32/include)
+			include_directories(libs/ffmpeg-win32/include/libswscale)
+			include_directories(libs/ffmpeg-win32/include/libavformat)
+			include_directories(libs/ffmpeg-win32/include/libavdevice)
+			include_directories(libs/ffmpeg-win32/include/libavcodec)
+			
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win32/lib)
+		endif()
+		
+		set(FFmpeg_LIBRARIES
+				avcodec
+				avformat
+				avutil
+				swscale)
+		
+	endif()
+	
+	if(USE_MFC_TOOLS)
+		
+		include_directories(libs/atlmfc/include)
+		if(CMAKE_CL_64)
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/atlmfc/lib/amd64)
+		else()
+			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/atlmfc/lib)
+		endif()
+		
+		add_definitions(-DUSE_MFC_TOOLS)
+		
+		list(APPEND RBDOOM3_SOURCES
+			${TOOLS_INCLUDES}
+			${TOOLS_COMAFX_INCLUDES} ${TOOLS_COMAFX_SOURCES}
+			${TOOLS_COMMON_INCLUDES} ${TOOLS_COMMON_SOURCES}
+			${TOOLS_COMMON_PROPTREE_INCLUDES} ${TOOLS_COMMON_PROPTREE_SOURCES}
+			
+			${EDITOR_AF_INCLUDES} ${EDITOR_AF_SOURCES}
+			${EDITOR_DEBUGGER_INCLUDES} ${EDITOR_DEBUGGER_SOURCES}
+			${EDITOR_DECL_INCLUDES} ${EDITOR_DECL_SOURCES}
+			${EDITOR_GUIED_INCLUDES} ${EDITOR_GUIED_SOURCES}
+			${EDITOR_MATERIALEDITOR_INCLUDES} ${EDITOR_MATERIALEDITOR_SOURCES}
+			${EDITOR_PARTICLE_INCLUDES} ${EDITOR_PARTICLE_SOURCES}
+			${EDITOR_PDA_INCLUDES} ${EDITOR_PDA_SOURCES}
+			${EDITOR_RADIANT_INCLUDES} ${EDITOR_RADIANT_SOURCES}
+			${EDITOR_SCRIPT_INCLUDES} ${EDITOR_SCRIPT_SOURCES}
+			${EDITOR_SOUND_INCLUDES} ${EDITOR_SOUND_SOURCES})
+	endif()
+	
+	list(APPEND RBDOOM3_INCLUDES
+		${SYS_INCLUDES} 
+		${WIN32_INCLUDES})
+		
+	list(APPEND RBDOOM3_SOURCES
+		${SYS_SOURCES}
+		${WIN32_SOURCES})
 
-    # else()
-        find_package(DirectX REQUIRED)
-        include_directories(${DirectX_INCLUDE_DIR})
-    #endif()
+	list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
+	
+	if(USE_PRECOMPILED_HEADERS) 
+		set(RBDOOM3_PRECOMPILED_SOURCES ${RBDOOM3_SOURCES})
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${TIMIDITY_SOURCES} ${JPEG_SOURCES} ${PNG_SOURCES} ${ZLIB_SOURCES} ${GLEW_SOURCES})
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib/minizip/ioapi.c)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/framework/precompiled.cpp)
+	
+	
+		set_source_files_properties(
+		${RBDOOM3_PRECOMPILED_SOURCES}
+		PROPERTIES
+		COMPILE_FLAGS "/Yuprecompiled.h"
+		OBJECT_DEPENDS "precompiled.pch"
 
-    if(OPENAL)
-        add_definitions(-DUSE_OPENAL)
-
-        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
-
-        if(CMAKE_CL_64)
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win64)
-        else()
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win32)
-        endif()
-
-        list(APPEND RBDOOM3_INCLUDES ${OPENAL_INCLUDES})
-        list(APPEND RBDOOM3_SOURCES
-            ${OPENAL_SOURCES}
-            ${DOOMCLASSIC_OPENAL_SOURCES})
-
-        set(OpenAL_LIBRARIES
-            OpenAL32)
-
-        if(CMAKE_CL_64)
-            install(FILES libs/openal-soft/lib/win64/OpenAL64.dll DESTINATION .)
-        else()
-            install(FILES libs/openal-soft/lib/win32/OpenAL32.dll DESTINATION .)
-            install(FILES libs/openal-soft/lib/win32/OpenAL32.pdb DESTINATION .)
-        endif()
-    else()
-        list(APPEND RBDOOM3_INCLUDES ${XAUDIO2_INCLUDES})
-        list(APPEND RBDOOM3_SOURCES
-            ${XAUDIO2_SOURCES}
-            ${DOOMCLASSIC_XAUDIO2_SOURCES})
-    endif()
-
-    if(FFMPEG)
-        add_definitions(-DUSE_FFMPEG)
-
-        if(CMAKE_CL_64)
-            include_directories(libs/ffmpeg-win64/include)
-            include_directories(libs/ffmpeg-win64/include/libswscale)
-            include_directories(libs/ffmpeg-win64/include/libavformat)
-            include_directories(libs/ffmpeg-win64/include/libavdevice)
-            include_directories(libs/ffmpeg-win64/include/libavcodec)
-
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win64/lib)
-        else()
-            include_directories(libs/ffmpeg-win32/include)
-            include_directories(libs/ffmpeg-win32/include/libswscale)
-            include_directories(libs/ffmpeg-win32/include/libavformat)
-            include_directories(libs/ffmpeg-win32/include/libavdevice)
-            include_directories(libs/ffmpeg-win32/include/libavcodec)
-
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win32/lib)
-        endif()
-
-        set(FFmpeg_LIBRARIES
-                avcodec
-                avformat
-                avutil
-                swscale)
-
-    endif()
-
-    if(USE_MFC_TOOLS)
-
-        include_directories(libs/atlmfc/include)
-        if(CMAKE_CL_64)
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/atlmfc/lib/amd64)
-        else()
-            link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/atlmfc/lib)
-        endif()
-
-        add_definitions(-DUSE_MFC_TOOLS)
-
-        list(APPEND RBDOOM3_SOURCES
-            ${TOOLS_INCLUDES}
-            ${TOOLS_COMAFX_INCLUDES} ${TOOLS_COMAFX_SOURCES}
-            ${TOOLS_COMMON_INCLUDES} ${TOOLS_COMMON_SOURCES}
-            ${TOOLS_COMMON_PROPTREE_INCLUDES} ${TOOLS_COMMON_PROPTREE_SOURCES}
-
-            ${EDITOR_AF_INCLUDES} ${EDITOR_AF_SOURCES}
-            ${EDITOR_DEBUGGER_INCLUDES} ${EDITOR_DEBUGGER_SOURCES}
-            ${EDITOR_DECL_INCLUDES} ${EDITOR_DECL_SOURCES}
-            ${EDITOR_GUIED_INCLUDES} ${EDITOR_GUIED_SOURCES}
-            ${EDITOR_MATERIALEDITOR_INCLUDES} ${EDITOR_MATERIALEDITOR_SOURCES}
-            ${EDITOR_PARTICLE_INCLUDES} ${EDITOR_PARTICLE_SOURCES}
-            ${EDITOR_PDA_INCLUDES} ${EDITOR_PDA_SOURCES}
-            ${EDITOR_RADIANT_INCLUDES} ${EDITOR_RADIANT_SOURCES}
-            ${EDITOR_SCRIPT_INCLUDES} ${EDITOR_SCRIPT_SOURCES}
-            ${EDITOR_SOUND_INCLUDES} ${EDITOR_SOUND_SOURCES})
-    endif()
-
-    list(APPEND RBDOOM3_INCLUDES
-        ${SYS_INCLUDES}
-        ${WIN32_INCLUDES})
-
-    list(APPEND RBDOOM3_SOURCES
-        ${SYS_SOURCES}
-        ${WIN32_SOURCES})
-
-    list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
-
-    set(RBDOOM3_PRECOMPILED_SOURCES ${RBDOOM3_SOURCES})
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${TIMIDITY_SOURCES} ${JPEG_SOURCES} ${PNG_SOURCES} ${ZLIB_SOURCES} ${GLEW_SOURCES})
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib/minizip/ioapi.c)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp)
-        list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/framework/precompiled.cpp)
-
-
-        set_source_files_properties(
-            ${RBDOOM3_PRECOMPILED_SOURCES}
-            PROPERTIES
-            COMPILE_FLAGS "/Yuprecompiled.h"
-            OBJECT_DEPENDS "precompiled.pch"
-
-            )
-
-    set_source_files_properties(framework/precompiled.cpp
-        PROPERTIES
-        COMPILE_FLAGS "/Ycprecompiled.h"
-        OBJECT_OUTPUTS "precompiled.pch"
-        )
-
-    list(APPEND RBDOOM3_SOURCES ${WIN32_RESOURCES})
-
-    add_executable(RBDoom3BFG WIN32 ${RBDOOM3_INCLUDES} ${RBDOOM3_SOURCES})
-
-    #add_custom_command(TARGET RBDoom3BFG
+		)
+		
+		set_source_files_properties(framework/precompiled.cpp
+		PROPERTIES
+		COMPILE_FLAGS "/Ycprecompiled.h"
+		OBJECT_OUTPUTS "precompiled.pch"
+		)
+	endif()
+	
+	list(APPEND RBDOOM3_SOURCES ${WIN32_RESOURCES})
+	
+	add_executable(RBDoom3BFG WIN32 ${RBDOOM3_INCLUDES} ${RBDOOM3_SOURCES})
+		
+	#add_custom_command(TARGET RBDoom3BFG
     #               PRE_BUILD
     #			   COMMAND nmake ARGS /f Makefile.vc6 CFG=release
     #			   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/curl/lib
@@ -1436,173 +1461,177 @@ if(MSVC)
         ${JPEG_LIBRARY}
         ${GLEW_LIBRARY}
         ${Boost_LIBRARIES}
-        )
-
-    #CMAKE_BINARY_DIR
-    if(CMAKE_CL_64)
-        install(TARGETS RBDoom3BFG
-            RUNTIME DESTINATION .)
-    else()
-        install(TARGETS RBDoom3BFG
-            RUNTIME DESTINATION .)
-    endif()
-
+	${CMAKE_DL_LIBS}
+		)
+		
+	#CMAKE_BINARY_DIR
+	if(CMAKE_CL_64)
+		install(TARGETS RBDoom3BFG
+			RUNTIME DESTINATION .)
+	else()
+		install(TARGETS RBDoom3BFG
+			RUNTIME DESTINATION .)
+	endif()
+	
 else()
 
-    list(APPEND RBDOOM3_SOURCES
-        ${SYS_INCLUDES} ${SYS_SOURCES})
+	list(APPEND RBDOOM3_SOURCES
+		${SYS_INCLUDES} ${SYS_SOURCES})
+	
+	find_package(OpenGL REQUIRED)
+	include_directories(${OPENGL_INCLUDE_DIRS})
 
-    find_package(OpenGL REQUIRED)
-    include_directories(${OPENGL_INCLUDE_DIRS})
+	if(UNIX)
+		if(FFMPEG)
+			find_package(FFMPEG REQUIRED)
+			add_definitions(-DUSE_FFMPEG)
+			
+			include_directories(${FFMPEG_INCLUDE_DIR})
+			link_directories(${FFMPEG_LIBRARIES_DIRS})
+		endif()
 
-    if(UNIX)
-        if(FFMPEG)
-            find_package(FFMPEG REQUIRED)
-            add_definitions(-DUSE_FFMPEG)
+		if(SDL2)
+			find_package(SDL2 REQUIRED)
+			include_directories(${SDL2_INCLUDE_DIR})
+			set(SDLx_LIBRARY ${SDL2_LIBRARY})
+		else()
+			find_package(SDL REQUIRED)
+			include_directories(${SDL_INCLUDE_DIR})
+			set(SDLx_LIBRARY ${SDL_LIBRARY})
+		endif()
 
-            include_directories(${FFMPEG_INCLUDE_DIR})
-            link_directories(${FFMPEG_LIBRARIES_DIRS})
-        endif()
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+			list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
+		else()
+			list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+		endif()
 
-        if(SDL2)
-            find_package(SDL2 REQUIRED)
-            include_directories(${SDL2_INCLUDE_DIR})
-            set(SDLx_LIBRARY ${SDL2_LIBRARY})
-        else()
-            find_package(SDL REQUIRED)
-            include_directories(${SDL_INCLUDE_DIR})
-            set(SDLx_LIBRARY ${SDL_LIBRARY})
-        endif()
+		list(APPEND RBDOOM3_SOURCES
+			${POSIX_INCLUDES} ${POSIX_SOURCES}
+			${SDL_INCLUDES} ${SDL_SOURCES})
+			
+		if(OPENAL)
+			find_package(OpenAL REQUIRED)
+			add_definitions(-DUSE_OPENAL)
 
-        if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-            list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
-        else()
-            list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
-        endif()
+			#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
+			
+			#if(CMAKE_CL_64)
+			#	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win64)
+			#else()
+			#	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win32)
+			#endif()
+			
+			list(APPEND RBDOOM3_INCLUDES ${OPENAL_INCLUDES})
+			list(APPEND RBDOOM3_SOURCES
+				${OPENAL_SOURCES}
+				${DOOMCLASSIC_OPENAL_SOURCES})
+		else()
+			list(APPEND RBDOOM3_INCLUDES ${STUBAUDIO_INCLUDES})
+			list(APPEND RBDOOM3_SOURCES
+				${STUBAUDIO_SOURCES}
+				${DOOMCLASSIC_STUBAUDIO_SOURCES})
+		endif()
+			
+	endif()
 
-        list(APPEND RBDOOM3_SOURCES
-            ${POSIX_INCLUDES} ${POSIX_SOURCES}
-            ${SDL_INCLUDES} ${SDL_SOURCES})
+	list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
+	
+	if(USE_PRECOMPILED_HEADERS) 	
+		set(RBDOOM3_PRECOMPILED_SOURCES ${RBDOOM3_SOURCES})
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${TIMIDITY_SOURCES} ${JPEG_SOURCES} ${PNG_SOURCES} ${ZLIB_SOURCES} ${GLEW_SOURCES})
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib/minizip/ioapi.c)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp)
+		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp)
 
-        if(OPENAL)
-            find_package(OpenAL REQUIRED)
-            add_definitions(-DUSE_OPENAL)
+		foreach( src_file ${RBDOOM3_PRECOMPILED_SOURCES} )
+			#message(STATUS "-include precompiled.h for ${src_file}")
+			set_source_files_properties(
+				${src_file}
+				PROPERTIES
+				COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/idlib/precompiled.h"
+				)
+		endforeach()
 
-            #include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
+		# precompiled magic for GCC/clang, adapted from https://gist.github.com/573926
+		STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
+		SET(_compiler_FLAGS ${${_flags_var_name}})
+		GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
+		FOREACH(item ${_directory_flags})
+			LIST(APPEND _compiler_FLAGS " -I${item}")
+		ENDFOREACH(item)
+	endif()
+		
+	GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
+	LIST(APPEND _compiler_FLAGS ${_directory_flags})
+	SEPARATE_ARGUMENTS(_compiler_FLAGS)
+	
+	if(USE_PRECOMPILED_HEADERS)
+		# we need to recreate the precompiled header for RBDoom3BFG 
+		# (i.e. can't use the one created for idlib before)
+		# because some definitions (e.g. -D__IDLIB__ -D__DOOM_DLL__) differ
+		add_custom_target(precomp_header_rbdoom3bfg ALL
+				COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header idlib/precompiled.h -o idlib/precompiled.h.gch
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+				COMMENT "Creating idlib/precompiled.h.gch for RBDoom3BFG"
+				)
+	endif()
+	
+	if(WIN32)
+		set(remove_command "del")
+	else()
+		set(remove_command "rm")
+	endif()
+	
+	if (USE_PRECOMPILED_HEADERS)
+		# it's ugly enough that the precompiled header binary needs to be in the 
+		# source directory (instead of the build directory), so let's at least
+		# delete it after build.
+		add_custom_target(rm_precomp_header ALL
+				COMMAND ${remove_command} "idlib/precompiled.h.gch"
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+				COMMENT "remove idlib/precompiled.h.gch"
+				)
+				
+		# make sure this is run after creating idlib
+		add_dependencies(precomp_header_rbdoom3bfg idlib)
+	endif()
+	
+	add_executable(RBDoom3BFG WIN32 ${RBDOOM3_SOURCES})
 
-            #if(CMAKE_CL_64)
-            #	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win64)
-            #else()
-            #	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win32)
-            #endif()
+	if (USE_PRECOMPILED_HEADERS)
+		# make sure precompiled header is created before executable is compiled
+		add_dependencies(RBDoom3BFG precomp_header_rbdoom3bfg)
+		
+		# make sure precompiled header is deleted after executable is compiled
+		add_dependencies(rm_precomp_header RBDoom3BFG)
+	endif()	
 
-            list(APPEND RBDOOM3_INCLUDES ${OPENAL_INCLUDES})
-            list(APPEND RBDOOM3_SOURCES
-                ${OPENAL_SOURCES}
-                ${DOOMCLASSIC_OPENAL_SOURCES})
-        else()
-            list(APPEND RBDOOM3_INCLUDES ${STUBAUDIO_INCLUDES})
-            list(APPEND RBDOOM3_SOURCES
-                ${STUBAUDIO_SOURCES}
-                ${DOOMCLASSIC_STUBAUDIO_SOURCES})
-        endif()
+	if(NOT WIN32)
+		if(NOT "${CMAKE_SYSTEM}" MATCHES "Darwin")
+			set(RT_LIBRARY rt)
+		endif()
 
-    endif()
-
-    list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
-
-    set(RBDOOM3_PRECOMPILED_SOURCES ${RBDOOM3_SOURCES})
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${TIMIDITY_SOURCES} ${JPEG_SOURCES} ${PNG_SOURCES} ${ZLIB_SOURCES} ${GLEW_SOURCES})
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib/minizip/ioapi.c)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp)
-    list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp)
-
-    foreach( src_file ${RBDOOM3_PRECOMPILED_SOURCES} )
-        #message(STATUS "-include precompiled.h for ${src_file}")
-        set_source_files_properties(
-            ${src_file}
-            PROPERTIES
-            COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/idlib/precompiled.h"
-            )
-    endforeach()
-
-    # precompiled magic for GCC/clang, adapted from https://gist.github.com/573926
-    STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
-    SET(_compiler_FLAGS ${${_flags_var_name}})
-    GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
-    FOREACH(item ${_directory_flags})
-        LIST(APPEND _compiler_FLAGS " -I${item}")
-    ENDFOREACH(item)
-
-    GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
-    LIST(APPEND _compiler_FLAGS ${_directory_flags})
-    SEPARATE_ARGUMENTS(_compiler_FLAGS)
-
-    # we need to recreate the precompiled header for RBDoom3BFG
-    # (i.e. can't use the one created for idlib before)
-    # because some definitions (e.g. -D__IDLIB__ -D__DOOM_DLL__) differ
-    add_custom_target(precomp_header_rbdoom3bfg ALL
-                      COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header idlib/precompiled.h -o idlib/precompiled.h.gch
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      COMMENT "Creating idlib/precompiled.h.gch for RBDoom3BFG"
-                      )
-
-    if(WIN32)
-        set(remove_command "del")
-    else()
-        set(remove_command "rm")
-    endif()
-    # it's ugly enough that the precompiled header binary needs to be in the
-    # source directory (instead of the build directory), so let's at least
-    # delete it after build.
-    add_custom_target(rm_precomp_header ALL
-                      COMMAND ${remove_command} "idlib/precompiled.h.gch"
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      COMMENT "remove idlib/precompiled.h.gch"
-                      )
-
-    # make sure this is run after creating idlib
-    add_dependencies(precomp_header_rbdoom3bfg idlib)
-
-    add_executable(RBDoom3BFG WIN32 ${RBDOOM3_SOURCES})
-
-    # make sure precompiled header is created before executable is compiled
-    add_dependencies(RBDoom3BFG precomp_header_rbdoom3bfg)
-
-    # make sure precompiled header is deleted after executable is compiled
-    add_dependencies(rm_precomp_header RBDoom3BFG)
-
-
-    if(NOT WIN32)
-        if(NOT "${CMAKE_SYSTEM}" MATCHES "Darwin")
-            set(RT_LIBRARY rt)
-        endif()
-
-        if(NOT "${CMAKE_SYSTEM}" MATCHES "FreeBSD")
-            set(DL_LIBRARY dl)
-        endif()
-
-        target_link_libraries(RBDoom3BFG
-            idlib
-            ${OPENGL_LIBRARIES}
-            pthread
-            ${DL_LIBRARY}
-            ${RT_LIBRARY}
-            ${SDLx_LIBRARY}
-            ${OPENAL_LIBRARY}
-            ${FFMPEG_LIBRARIES}
+		target_link_libraries(RBDoom3BFG
+			idlib
+			${OPENGL_LIBRARIES}
+			pthread
+			${RT_LIBRARY}
+			${SDLx_LIBRARY}
+			${OPENAL_LIBRARY}
+			${FFMPEG_LIBRARIES}
             ${ZLIB_LIBRARY}
             ${PNG_LIBRARY}
             ${JPEG_LIBRARY}
             ${GLEW_LIBRARY}
             ${Boost_LIBRARIES}
+            ${CMAKE_DL_LIBS}
             )
     endif()
-
 endif()
