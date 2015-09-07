@@ -1235,7 +1235,12 @@ if(USE_TET_GAZE)
     
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIR})
-		link_directories( ${Boost_LIBRARY_DIR}} )
+		link_directories( ${Boost_LIBRARY_DIR} )
+		set(Boost_USE_STATIC_LIBS        OFF)
+		set(Boost_USE_MULTITHREADED      ON)
+		set(Boost_USE_STATIC_RUNTIME     OFF)
+		set(BOOST_ALL_DYN_LINK           OFF)   # force dynamic linking for all libraries
+		# add_definitions(-DBOOST_ALL_NO_LIB)
     else()
       message (FATAL_ERROR "Could not find Boost libraries!")
     endif(Boost_FOUND)
