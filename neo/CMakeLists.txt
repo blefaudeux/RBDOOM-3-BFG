@@ -1234,14 +1234,13 @@ if(USE_TET_GAZE)
     SET( Boost_USE_STATIC_LIBS ON )
     
     IF(Boost_FOUND)
-        list(APPEND RBDOOM3_INCLUDES ${Boost_INCLUDE_DIR})
-		include_directories(${Boost_INCLUDE_DIR})
+        include_directories(${Boost_INCLUDE_DIR})
         link_directories( ${Boost_LIBRARIES} )
 		message ("Boost include dirs:\n" ${Boost_INCLUDE_DIR})
     ELSE()
       message (FATAL_ERROR "Could not find Boost libraries!")
     ENDIF(Boost_FOUND)
-
+	
     list(APPEND RBDOOM3_INCLUDES ${TET_INCLUDES})
     list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})
 endif()
