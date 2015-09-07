@@ -1228,15 +1228,16 @@ add_definitions(-D__DOOM__
 if(USE_TET_GAZE)
     add_definitions(-DUSE_TET)
 
-    SET( Boost_USE_MULTITHREAD ON )
-    SET( Boost_USE_STATIC_LIBS ON )
     SET( BOOST_MIN_VERSION "1.53.0" )
-    FIND_PACKAGE( Boost REQUIRED thread system )
-
+    FIND_PACKAGE( Boost REQUIRED thread system)
+	SET( Boost_USE_MULTITHREAD ON )
+    SET( Boost_USE_STATIC_LIBS ON )
+    
     IF(Boost_FOUND)
         list(APPEND RBDOOM3_INCLUDES ${Boost_INCLUDE_DIR})
+		include_directories(${Boost_INCLUDE_DIR})
         link_directories( ${Boost_LIBRARIES} )
-        # message("Boost include dir : ${Boost_INCLUDE_DIR}\n Boost libraries :  ${Boost_LIBRARIES}\n" )
+		message ("Boost include dirs:\n" ${Boost_INCLUDE_DIR})
     ELSE()
       message (FATAL_ERROR "Could not find Boost libraries!")
     ENDIF(Boost_FOUND)
