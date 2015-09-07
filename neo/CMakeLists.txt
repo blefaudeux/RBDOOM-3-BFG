@@ -1236,13 +1236,15 @@ if(USE_TET_GAZE)
     IF(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIR})
         link_directories( ${Boost_LIBRARIES} )
-		message ("Boost include dirs:\n" ${Boost_INCLUDE_DIR})
     ELSE()
       message (FATAL_ERROR "Could not find Boost libraries!")
     ENDIF(Boost_FOUND)
 	
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/tet/include)
+	message ("Including TET SDK in : \n" ${CMAKE_CURRENT_SOURCE_DIR}/libs/tet)
+	
     list(APPEND RBDOOM3_INCLUDES ${TET_INCLUDES})
-    list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})
+    list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})	
 endif()
 
 if(MONOLITH)

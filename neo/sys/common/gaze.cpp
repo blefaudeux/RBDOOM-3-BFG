@@ -1,5 +1,6 @@
 #include "gaze.h"
 #if defined(USE_TET)
+#include <algorithm>
 
 // --- MyGaze implementation
 idGaze::idGaze()
@@ -9,7 +10,7 @@ idGaze::idGaze()
     {
         // Enable GazeData notifications
         m_api.add_listener( *this );
-        common->Warning( "Connected to The Eye Tribe server" );
+        // common->Warning( "Connected to The Eye Tribe server" );
     }
 }
 
@@ -23,15 +24,11 @@ void idGaze::on_gaze_data( gtl::GazeData const & gaze_data )
 {
     if( gaze_data.state /* & gtl::GazeData::GD_STATE_TRACKING_GAZE */ )
     {
-        gtl::Point2D const & smoothedCoordinates = gaze_data.avg;
-
-        // Move GUI point, do hit-testing, log coordinates, etc.
-        m_gazePoints.Append( std::make_pair<float,float>(smoothedCoordinates.x,
-                                                         smoothedCoordinates.y));
+        m_gazePoints.push_back( gaze_data.avg );
     }
 
     // Restrain the list to the last 10 gaze points (not sure that we actually pick the last 10 here..)
-    m_gazePoints.Resize( std::min(10, int(m_gazePoints.Size())) );
+    m_gazePoints.resize( std::min(10, int(m_gazePoints.size())) );
 }
 
 #endif
