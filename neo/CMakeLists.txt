@@ -1233,12 +1233,12 @@ if(USE_TET_GAZE)
 	SET( Boost_USE_MULTITHREAD ON )
     SET( Boost_USE_STATIC_LIBS ON )
     
-    IF(Boost_FOUND)
+    if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIR})
-        link_directories( ${Boost_LIBRARIES} )
-    ELSE()
+		link_directories( ${Boost_LIBRARY_DIR}} )
+    else()
       message (FATAL_ERROR "Could not find Boost libraries!")
-    ENDIF(Boost_FOUND)
+    endif(Boost_FOUND)
 	
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/tet/include)
 	message ("Including TET SDK in : \n" ${CMAKE_CURRENT_SOURCE_DIR}/libs/tet)
@@ -1463,7 +1463,7 @@ if(MSVC)
         ${JPEG_LIBRARY}
         ${GLEW_LIBRARY}
         ${Boost_LIBRARIES}
-	${CMAKE_DL_LIBS}
+		${CMAKE_DL_LIBS}
 		)
 		
 	#CMAKE_BINARY_DIR
