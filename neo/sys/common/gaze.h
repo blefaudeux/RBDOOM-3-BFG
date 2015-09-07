@@ -1,7 +1,6 @@
-#include <idlib/containers/List.h>
-
 #if defined(USE_TET)
 #include <libs/tet/include/gazeapi.h>
+#include <vector>
 
 // --- idGaze definition
 class idGaze : public gtl::IGazeListener
@@ -16,6 +15,6 @@ class idGaze : public gtl::IGazeListener
 
     public:
         gtl::GazeApi m_api;
-        idList< std::pair<float, float> > m_gazePoints;
+        std::vector< gtl::Point2D > m_gazePoints;
 };
 #endif

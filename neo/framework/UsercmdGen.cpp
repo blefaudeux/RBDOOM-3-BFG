@@ -556,7 +556,7 @@ float idUsercmdGenLocal::DampingGazeMotion(float gazeDiff)
     // Custom crafted weight function instead :
     if ( std::abs( gazeDiff) < activeWindow )
     {
-        return 0.;
+        return 0.f;
     }
     else
     {
@@ -582,9 +582,9 @@ void idUsercmdGenLocal::GazeMove()
         // Referential is +-0.5
         int const screenWidthHalf = renderSystem->GetWidth()>>1;
         int const screenHeightHalf = renderSystem->GetHeight()>>1;
-        static float vDeadZone = 0.8;
-        static float hDeadZoneL = 0.3;
-        static float hDeadZoneR = 0.7;
+        static float vDeadZone = 0.8f;
+        static float hDeadZoneL = 0.3f;
+        static float hDeadZoneR = 0.7f;
 
         bool noMotion = cmd.forwardmove == 0;
 
