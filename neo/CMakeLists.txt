@@ -1240,7 +1240,7 @@ if(USE_TET_GAZE)
 		set(Boost_USE_MULTITHREADED      ON)
 		set(Boost_USE_STATIC_RUNTIME     OFF)
 		set(BOOST_ALL_DYN_LINK           OFF)   # force dynamic linking for all libraries
-		# add_definitions(-DBOOST_ALL_NO_LIB)
+		add_definitions(-DBOOST_ALL_NO_LIB)
     else()
       message (FATAL_ERROR "Could not find Boost libraries!")
     endif(Boost_FOUND)
@@ -1405,7 +1405,12 @@ if(MSVC)
 	list(APPEND RBDOOM3_SOURCES
 		${SYS_SOURCES}
 		${WIN32_SOURCES})
-
+		
+	if(USE_TET_GAZE)
+		list(APPEND RBDOOM3_INCLUDES ${SDL_INCLUDES} )
+		list(APPEND RBDOOM3_SOURCES ${SDL_SOURCES})
+	endif()
+		
 	list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
 	
 	if(USE_PRECOMPILED_HEADERS) 
