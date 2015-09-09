@@ -36,6 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 
 idCVar r_drawEyeColor( "r_drawEyeColor", "0", CVAR_RENDERER | CVAR_BOOL, "Draw a colored box, red = left eye, blue = right eye, grey = non-stereo" );
 idCVar r_motionBlur( "r_motionBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of motion blur samples" );
+idCVar r_dofBlur( "r_dofBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of depth of field blur samples" );
 idCVar r_forceZPassStencilShadows( "r_forceZPassStencilShadows", "0", CVAR_RENDERER | CVAR_BOOL, "force Z-pass rendering for performance testing" );
 idCVar r_useStencilShadowPreload( "r_useStencilShadowPreload", "1", CVAR_RENDERER | CVAR_BOOL, "use stencil shadow preload algorithm instead of Z-fail" );
 idCVar r_skipShaderPasses( "r_skipShaderPasses", "0", CVAR_RENDERER | CVAR_BOOL, "" );
@@ -3987,6 +3988,74 @@ void RB_DrawViewInternal( const viewDef_t* viewDef, const int stereoEye )
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
 	
 	renderLog.CloseBlock();
+}
+
+/*
+==================
+RB_DofBlur
+
+Experimental feature
+==================
+*/
+void RB_DofBlur()
+{
+    // Ben : WiP, reusing most of the motion blurring, work to do to match it with the gaze..
+
+    if( !backEnd.viewDef->viewEntitys )
+    {
+        // 3D views only
+        return;
+    }
+    if( r_dofBlur.GetInteger() <= 0 )
+    {
+        return;
+    }
+    if( backEnd.viewDef->isSubview )
+    {
+        return;
+    }
+
+    GL_CheckErrors();
+
+    // clear the alpha buffer
+    glClearColor( 0, 0, 0, 1 );
+    GL_State( GLS_COLORMASK | GLS_DEPTHMASK );
+    glClear( GL_COLOR_BUFFER_BIT );
+    GL_Color( 0, 0, 0, 0 );
+    GL_SelectTexture( 0 );
+    globalImages->blackImage->Bind();
+    backEnd.currentSpace = NULL;
+
+    // copy off the color buffer and the depth buffer for the motion blur prog
+    // we use the viewport dimensions for copying the buffers in case resolution scaling is enabled.
+    const idScreenRect& viewport = backEnd.viewDef->viewport;
+    globalImages->currentRenderImage->CopyFramebuffer( viewport.x1, viewport.y1, viewport.GetWidth(), viewport.GetHeight() );
+
+    GL_State( GLS_DEPTHFUNC_ALWAYS );
+    GL_Cull( CT_TWO_SIDED );
+
+    renderProgManager.BindShader_DoF();
+
+    // let the fragment program know how many samples we are going to use
+    idVec4 samples( ( float )( 1 << r_dofBlur.GetInteger() ) );
+    SetFragmentParm( RENDERPARM_OVERBRIGHT, samples.ToFloatPtr() );
+
+    // Lookup the depth buffer & current gaze coordinate to center the DoF
+    // TODO: Ben
+
+    // Push the depth coordinate to the shader
+    // TODO: Ben
+
+    // Fire up the shader and draw elements
+    // TODO: Ben
+
+    GL_SelectTexture( 0 );
+    globalImages->currentRenderImage->Bind();
+    GL_SelectTexture( 1 );
+    globalImages->currentDepthImage->Bind();
+
+    RB_DrawElementsWithCounters( &backEnd.unitSquareSurface );
+    GL_CheckErrors();
 }
 
 /*

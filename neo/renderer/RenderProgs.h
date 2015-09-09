@@ -410,7 +410,12 @@ public:
 	{
 		BindShader_Builtin( BUILTIN_MOTION_BLUR );
 	}
-	
+
+    void    BindShader_DoF()
+    {
+        BindShader_Builtin( BUILTIN_DEPTH_OF_FIELD );
+    }
+
 	void	BindShader_DebugShadowMap()
 	{
 		BindShader_Builtin( BUILTIN_DEBUG_SHADOWMAP );
@@ -504,6 +509,8 @@ protected:
 		BUILTIN_BINK_GUI,
 		BUILTIN_STEREO_INTERLACE,
 		BUILTIN_MOTION_BLUR,
+        BUILTIN_DEPTH_OF_FIELD,
+
 		
 		BUILTIN_DEBUG_SHADOWMAP,
 		
