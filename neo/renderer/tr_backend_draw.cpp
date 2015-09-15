@@ -4024,12 +4024,9 @@ void DofBokeh()
     globalImages->blackImage->Bind();
     backEnd.currentSpace = NULL;
 
-    // copy off the color buffer and the depth buffer for the depth bokeh
-    // we use the viewport dimensions for copying the buffers in case resolution scaling is enabled.
-    // the depth buffer has been grabbed before
+    // copy only the color buffer, the depth buffer has been grabbed before (see caller function)
     const idScreenRect& viewport = backEnd.viewDef->viewport;
     globalImages->currentRenderImage->CopyFramebuffer( viewport.x1, viewport.y1, viewport.GetWidth(), viewport.GetHeight() );
-
     GL_State( GLS_DEPTHFUNC_ALWAYS );
     GL_Cull( CT_TWO_SIDED );
 
@@ -4040,11 +4037,8 @@ void DofBokeh()
     idVec4 samples( ( float )( 1 << r_dofBokeh.GetInteger() ) );
     SetFragmentParm( RENDERPARM_BOKEH_SAMPLE, samples.ToFloatPtr() );
 
-    float const depth = 0.2f; // TODO: Ben - lookup the value from the gaze point + depth buffer
+    float const depth = 3.f; // TODO: Ben - lookup the value from the gaze point + depth buffer
     SetFragmentParm( RENDERPARM_BOKEH_DEPTH, &depth );
-
-    // Lookup the depth buffer & current gaze coordinate to center the DoF
-    // TODO: Ben
 
     GL_SelectTexture( 0 );
     globalImages->currentRenderImage->Bind();

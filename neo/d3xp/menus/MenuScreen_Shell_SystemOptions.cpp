@@ -113,7 +113,7 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 
     control = new( TAG_SWF ) idMenuWidget_ControlButton();
     control->SetOptionType( OPTION_SLIDER_TEXT );
-    control->SetLabel( "#str_swf_dofbokeh" );
+    control->SetLabel( "Depth of Field" );
     control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_DOFBOKEH );
     control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
     control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_DOFBOKEH );
