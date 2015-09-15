@@ -1684,6 +1684,8 @@ GLuint idRenderProgManager::LoadGLSLShader( GLenum target, const char* name, con
 	inFile.StripFileExtension();
 	outFileHLSL.Format( "renderprogs/hlsl/%s%s", name, nameOutSuffix );
 	outFileHLSL.StripFileExtension();
+
+    idLib::Printf("Handling shader " + inFile + "\n");
 	
 	switch( glConfig.driverType )
 	{
@@ -1748,6 +1750,7 @@ GLuint idRenderProgManager::LoadGLSLShader( GLenum target, const char* name, con
 			hlslFileBuffer = FindEmbeddedSourceShader( inFile.c_str() );
 			if( hlslFileBuffer == NULL )
 			{
+                idLib::Printf("Shader GLSL-> HLSL : Couldn't find source file\n");
 				return false;
 			}
 			len = strlen( hlslFileBuffer );
@@ -1759,6 +1762,7 @@ GLuint idRenderProgManager::LoadGLSLShader( GLenum target, const char* name, con
 		
 		if( len <= 0 )
 		{
+            idLib::Printf("Shader GLSL-> HLSL : Couldn't read file\n");
 			return false;
 		}
 		
@@ -1864,7 +1868,7 @@ GLuint idRenderProgManager::LoadGLSLShader( GLenum target, const char* name, con
 			if( strstr( infoLog.Ptr(), "successfully compiled to run on hardware" ) != NULL ||
 					strstr( infoLog.Ptr(), "No errors." ) != NULL )
 			{
-				//idLib::Printf( "%s program %s from %s compiled to run on hardware\n", typeName, GetName(), GetFileName() );
+                // idLib::Printf( "%s program %s from %s compiled to run on hardware\n", typeName, GetName(), GetFileName() );
 			}
 			else if( r_displayGLSLCompilerMessages.GetBool() ) // DG:  check for the CVar I added above
 			{

@@ -4,83 +4,35 @@
 
 
 // Includes variables redefined by the engine at runtime
-#include "renderprogs/global.inc" 
+#include "renderprogs/global.inc"
 
 
 uniform sampler2D samp0 : register(s0);   // color buffer
 uniform sampler2D samp1 : register(s1);   // depth buffer
 
-#define PI  3.14159265
-
-float2 texel = rpWindowCoord;
-
-// Set parameters from render parameters & hard coded
-float const focalDepth = rpDofFocusDepth;
-float const focalLength = 28.f;
-float const fstop = 2.f;
-bool const showFocus = false;
-
-
-/*
- * make sure that these two values are the same for your camera, otherwise distances will be wrong.
- */
-
-float znear = 0.1; //camera clipping start
-float zfar = 100.0; //camera clipping end
-
-//------------------------------------------
-//user variables
-
-int samples = 3; //samples on the first ring
-int rings = 3; //ring count
-
-float const ndofstart = 1.0; //near dof blur start
-float const ndofdist = 2.0; //near dof blur falloff distance
-float const fdofstart = 1.0; //far dof blur start
-float const fdofdist = 3.0; //far dof blur falloff distance
-
-float CoC = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
-
-float maxblur = 1.0; //clamp value of max blur (0.0 = no blur,1.0 default)
-
-float threshold = 0.5; //highlight threshold;
-float gain = 2.0; //highlight gain;
-
-float bias = 0.5; //bokeh edge bias
-
-bool noise = true; //use noise instead of pattern for sample dithering
-float namount = 0.0001; //dither amount
-
-bool depthblur = false; //blur the depth buffer?
-float dbsize = 1.25; //depthblursize
-
-//------------------------------------------
-
 //processing the sample
 float3 color(float2 coords,float blur)
 {
     float3 col = float3(0.0);
-    
-    col.r = tex2D(samp0, coords + float2(0.0,1.0) * texel * blur).r;
-    col.g = tex2D(samp0, coords + float2(-0.866,-0.5) * texel * blur).g;
-    col.b = tex2D(samp0, coords + float2(0.866,-0.5) * texel * blur).b;
-    
+
+    col.r = tex2D(samp0, coords + float2(0.0,1.0) * rpWindowCoord * blur).r;
+    col.g = tex2D(samp0, coords + float2(-0.866,-0.5) * rpWindowCoord * blur).g;
+    col.b = tex2D(samp0, coords + float2(0.866,-0.5) * rpWindowCoord * blur).b;
+
     float3 lumcoeff = float3(0.299,0.587,0.114);
     float lum = dot(col.rgb, lumcoeff);
     float thresh = max((lum-threshold)*gain, 0.0);
-    return col + mix(float3(0.0), col , thresh*blur);
+    return col + mix( 0.f, col , thresh*blur);
 }
 
 float2 rand(float2 coord) //generating noise/pattern texture for dithering
 {
-    float noiseX = ((fract(1.0-coord.s*(width/2.0))*0.25)+(fract(coord.t*(height/2.0))*0.75))*2.0-1.0;
-    float noiseY = ((fract(1.0-coord.s*(width/2.0))*0.75)+(fract(coord.t*(height/2.0))*0.25))*2.0-1.0;
-    
-    if (noise)
-    {
-        noiseX = clamp(fract(sin(dot(coord ,float2(12.9898,78.233))) * 43758.5453),0.0,1.0)*2.0-1.0;
-        noiseY = clamp(fract(sin(dot(coord ,float2(12.9898,78.233)*2.0)) * 43758.5453),0.0,1.0)*2.0-1.0;
-    }
+    float noiseX = ((fract(1.0-coord.s*(width/2.0))*0.25)
+                    +(fract(coord.t*(height/2.0))*0.75))*2.0-1.0;
+
+    float noiseY = ((fract(1.0-coord.s*(width/2.0))*0.75)
+                    +(fract(coord.t*(height/2.0))*0.25))*2.0-1.0;
+
     return float2(noiseX,noiseY);
 }
 
@@ -99,56 +51,76 @@ struct PS_OUT {
 
 void main( PS_IN fragment, out PS_OUT result )
 {
+    // Parameters
+    float const znear = 0.1; //camera clipping start
+    float const zfar = 100.0; //camera clipping end
+
+    int const samples = 3; //samples on the first ring
+    int const rings = 3; //ring count
+
+    float const ndofstart = 1.0; //near dof blur start
+    float const ndofdist = 2.0; //near dof blur falloff distance
+    float const fdofstart = 1.0; //far dof blur start
+    float const fdofdist = 3.0; //far dof blur falloff distance
+
+    float const CoC = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
+    float const threshold = 0.5; //highlight threshold;
+    float const gain = 2.0; //highlight gain;
+    float const bias = 0.5; //bokeh edge bias
+
+    
     //scene depth calculation
     float depth = tex2D( samp1, fragment.texcoord0 ).x;
-    
+
     //dof blur factor calculation
-    float a = depth-focalDepth; //focal plane
+    float a = depth-rpDofFocusDepth; //focal plane
     float b = (a-fdofstart)/fdofdist; //far DoF
     float c = (-a-ndofstart)/ndofdist; //near Dof
     float blur = (a>0.0)?b:c;
-    
-    blur = clamp(blur,0.0,1.0);
-    
-    // calculation of pattern for dithering
-    float2 noise = rand(gl_TexCoord[0].xy)*namount*blur;
-    
+
+    blur = clamp(blur, 0.0,1.0);
+
     // getting blur x and y step factor
-    float w = (1.0/width)*blur*maxblur + noise.x;
-    float h = (1.0/height)*blur*maxblur + noise.y;
-    
+    float w = (1.0/width) * blur;
+    float h = (1.0/height) * blur;
+
     // calculation of final color
     float3 col = float3(0.0);
-    
+
     //some optimization thingy
-    if(blur < 0.05)
+    if(blur < 0.05f)
     {
-        col = texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy).rgb;
+        col = tex2D(samp0, fragment.texcoord0).rgb;
     }
     else
     {
-        col = texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy).rgb;
+        // Compute the convolution on the fly
+        // Not really optimized..
+        
+        col = tex2D(samp0, fragment.texcoord0).rgb;
         float s = 1.0;
         int ringsamples;
-        
+
         for (int i = 1; i <= rings; i += 1)
         {
             ringsamples = i * samples;
-            
+
             for (int j = 0 ; j < ringsamples ; j += 1)
             {
-                float step = PI*2.0 / float(ringsamples);
+                float step = 3.1416*2.0 / float(ringsamples);
                 float pw = (cos(float(j)*step)*float(i));
                 float ph = (sin(float(j)*step)*float(i));
                 float p = 1.0;
-                
-                col += color(gl_TexCoord[0].xy + float2(pw*w,ph*h),blur)*mix(1.0,(float(i))/(float(rings)),bias)*p;
-                s += 1.0*mix(1.0,(float(i))/(float(rings)),bias)*p;
+
+                col += color( fragment.texcoord0 + float2(pw*w,ph*h), blur)
+                        * mix(1.0, (float(i))/(float(rings)),bias)*p;
+
+                s += 1.0 * mix( 1.0,(float(i) ) / ( float(rings)),bias )*p;
             }
         }
         col /= s; //divide by sample count
     }
-    
-    gl_FragColor.rgb = col;
-    gl_FragColor.a = 1.0;
+
+    result.color.xyz =  col;
+    result.w = 1.;
 }
