@@ -1568,7 +1568,7 @@ else()
 		ENDFOREACH(item)
 	endif()
 		
-	GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
+        GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 	LIST(APPEND _compiler_FLAGS ${_directory_flags})
 	SEPARATE_ARGUMENTS(_compiler_FLAGS)
 	

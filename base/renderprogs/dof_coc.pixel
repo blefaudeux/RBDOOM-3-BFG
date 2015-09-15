@@ -1,0 +1,23 @@
+     /*
+     
+     See GPU Gems 3
+     
+     */ 
+     
+     // These are set by the game engine.  
+     sampler shrunkSampler;  // Output of DofDownsample()  
+     sampler blurredSampler; // Blurred version of the shrunk sampler  
+     // This is the pixel shader function that calculates the actual  
+     // value used for the near circle of confusion.  
+     // "texCoords" are 0 at the bottom left pixel and 1 at the top right.  
+     float4 DofNearCoc( const float2 texCoords )  
+      
+    float3 color;  
+    float coc;  
+    half4 blurred;  
+    half4 shrunk;  
+    shrunk = tex2D( shrunkSampler, texCoords );  
+    blurred = tex2D( blurredSampler, texCoords );  
+    color = shrunk.rgb;  
+    coc = 2 * max( blurred.a, shrunk.a ) - shrunk.a;  
+    return float4( color, coc );   

@@ -99,6 +99,12 @@ return
 	"wobblesky.vertex",
 	"zcullReconstruct.pixel",
 	"zcullReconstruct.vertex",
+        
+        -- WiP - depth of field shaders
+        "dof_coc.pixel",
+        "dof_blur_coc.pixel",
+        "dof_downscale.pixel",
+        "dof_merge.pixel",
 }
 
 	

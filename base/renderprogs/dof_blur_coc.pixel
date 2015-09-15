@@ -1,0 +1,38 @@
+/*
+    See GPU Gems 3
+*/
+
+// This vertex and pixel shader applies a 3 x 3 blur to the image in  
+// colorMapSampler, which is the same size as the render target.  
+// The sample weights are 1/16 in the corners, 2/16 on the edges,  
+// and 4/16 in the center.  
+
+
+sampler colorSampler;  // Output of DofNearCoc()  
+float2 invRenderTargetSize;  
+
+struct PixelInput  
+{  
+  float4 position : POSITION;  
+  float4 texCoords : TEXCOORD0;  
+};  
+
+PixelInput SmallBlurVS( float4 position, float2 texCoords )  
+{  
+  PixelInput pixel;  
+  const float4 halfPixel = { -0.5, 0.5, -0.5, 0.5 };  
+  pixel.position = Transform_ObjectToClip( position );  
+  pixel.texCoords = texCoords.xxyy + halfPixel * invRenderTargetSize;  
+  return pixel;  
+}  
+
+float4 SmallBlurPS( const PixelInput pixel )  
+{  
+  float4 color;  
+  color = 0;  
+  color += tex2D( colorSampler, pixel.texCoords.xz );  
+  color += tex2D( colorSampler, pixel.texCoords.yz );  
+  color += tex2D( colorSampler, pixel.texCoords.xw );  
+  color += tex2D( colorSampler, pixel.texCoords.yw );  
+  return color / 4;  
+}   
