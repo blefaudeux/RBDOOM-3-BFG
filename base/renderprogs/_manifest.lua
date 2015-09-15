@@ -101,7 +101,8 @@ return
 	"zcullReconstruct.vertex",
         
         -- WiP - depth of field shaders
-        "dof_bokeh.pixel",
+        "dofBokeh.pixel",
+        "dofBokeh.vertex",
 }
 
 	

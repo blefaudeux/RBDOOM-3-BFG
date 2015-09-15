@@ -4046,9 +4046,6 @@ void DofBokeh()
     // Lookup the depth buffer & current gaze coordinate to center the DoF
     // TODO: Ben
 
-    // Fire up the shader and draw elements
-    // TODO: Ben
-
     GL_SelectTexture( 0 );
     globalImages->currentRenderImage->Bind();
     GL_SelectTexture( 1 );
