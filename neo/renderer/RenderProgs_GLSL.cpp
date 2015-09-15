@@ -356,6 +356,10 @@ static const char* GLSLParmNames[RENDERPARM_TOTAL] =
 	"rpShadowMatrix5Z",
 	"rpShadowMatrix5W",
 	// RB end
+
+    // WiP - added DoF computations parameters
+    "rpDofCoC",
+    "rpDofFocusDepth",
 };
 
 // RB begin

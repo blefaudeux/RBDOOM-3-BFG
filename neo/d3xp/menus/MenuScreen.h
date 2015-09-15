@@ -1364,6 +1364,7 @@ public:
             SYSTEM_FIELD_VSYNC,
             SYSTEM_FIELD_ANTIALIASING,
             SYSTEM_FIELD_MOTIONBLUR,
+            SYSTEM_FIELD_DOFBOKEH,
             // RB begin
             SYSTEM_FIELD_SHADOWMAPPING,
             //SYSTEM_FIELD_LODBIAS,
@@ -1396,6 +1397,7 @@ public:
         int originalFramerate;
         int originalAntialias;
         int originalMotionBlur;
+        int originalDofBokeh;
         int originalVsync;
         float originalBrightness;
         float originalVolume;

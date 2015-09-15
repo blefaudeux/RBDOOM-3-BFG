@@ -41,24 +41,40 @@ changelog:
 
 */
 
-uniform sampler2D bgl_RenderedTexture;
-uniform sampler2D bgl_DepthTexture;
-uniform float bgl_RenderedTextureWidth;
-uniform float bgl_RenderedTextureHeight;
+/*
+ * Minor changes by Benjamin Lefaudeux, to make it fit the existing Doom3 framework
+ */
+
+
+#include "renderprogs/global.inc" // Variables possibly redefined at runtime by the engine
+
+uniform sampler2D bgl_RenderedTexture : register(s0);   // view color;
+uniform sampler2D bgl_DepthTexture : register(s1);   // view depth;
+
+// uniform float bgl_RenderedTextureWidth;
+// uniform float bgl_RenderedTextureHeight;
+
+// float width = bgl_RenderedTextureWidth; //texture width
+// float height = bgl_RenderedTextureHeight; //texture height
 
 #define PI  3.14159265
 
-float width = bgl_RenderedTextureWidth; //texture width
-float height = bgl_RenderedTextureHeight; //texture height
+vec2 texel = rpWindowCoord; // vec2(1.0/width,1.0/height);
 
-vec2 texel = vec2(1.0/width,1.0/height);
-
+/*
 //uniform variables from external script
-
 uniform float focalDepth;  //focal distance value in meters, but you may use autofocus option below
 uniform float focalLength; //focal length in mm
 uniform float fstop; //f-stop value
 uniform bool showFocus; //show debug focus point and focal range (red = focal point, green = focal range)
+*/
+
+// Set parameters from render parameters & hard coded
+float const focalDepth = rpDofFocusDepth;
+float const focalLength = 28.f;
+float const fstop = 2.f;
+bool const showFocus = false;
+
 
 /* 
 make sure that these two values are the same for your camera, otherwise distances will be wrong.
@@ -81,7 +97,7 @@ float fdofdist = 3.0; //far dof blur falloff distance
 
 float CoC = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
 
-bool vignetting = true; //use optical lens vignetting?
+bool vignetting = false; //use optical lens vignetting?
 float vignout = 1.3; //vignetting outer border
 float vignin = 0.0; //vignetting inner border
 float vignfade = 22.0; //f-stops till vignete fades
@@ -114,7 +130,8 @@ float feather = 0.4; //pentagon shape feather
 //------------------------------------------
 
 
-float penta(vec2 coords) //pentagonal shape
+//pentagonal shape
+float penta(vec2 coords)
 {
 	float scale = float(rings) - 1.3;
 	vec4  HS0 = vec4( 1.0,         0.0,         0.0,  1.0);
@@ -149,7 +166,8 @@ float penta(vec2 coords) //pentagonal shape
 	return clamp( inorout, 0.0, 1.0 );
 }
 
-float bdepth(vec2 coords) //blurring depth
+//blurring depth
+float bdepth(vec2 coords) 
 {
 	float d = 0.0;
 	float kernel[9];
@@ -183,8 +201,8 @@ float bdepth(vec2 coords) //blurring depth
 	return d;
 }
 
-
-vec3 color(vec2 coords,float blur) //processing the sample
+//processing the sample
+vec3 color(vec2 coords,float blur) 
 {
 	vec3 col = vec3(0.0);
 	
@@ -238,16 +256,13 @@ float vignette()
 void main() 
 {
 	//scene depth calculation
-	
 	float depth = linearize(texture2D(bgl_DepthTexture,gl_TexCoord[0].xy).x);
-	
 	if (depthblur)
 	{
 		depth = linearize(bdepth(gl_TexCoord[0].xy));
 	}
 	
 	//focal plane calculation
-	
 	float fDepth = focalDepth;
 	
 	if (autofocus)
@@ -256,7 +271,6 @@ void main()
 	}
 	
 	//dof blur factor calculation
-	
 	float blur = 0.0;
 	
 	if (manualdof)
@@ -266,7 +280,6 @@ void main()
 		float c = (-a-ndofstart)/ndofdist; //near Dof
 		blur = (a>0.0)?b:c;
 	}
-	
 	else
 	{
 		float f = focalLength; //focal length in mm
@@ -283,23 +296,19 @@ void main()
 	blur = clamp(blur,0.0,1.0);
 	
 	// calculation of pattern for ditering
-	
 	vec2 noise = rand(gl_TexCoord[0].xy)*namount*blur;
 	
 	// getting blur x and y step factor
-	
 	float w = (1.0/width)*blur*maxblur+noise.x;
 	float h = (1.0/height)*blur*maxblur+noise.y;
 	
 	// calculation of final color
-	
 	vec3 col = vec3(0.0);
 	
 	if(blur < 0.05) //some optimization thingy
 	{
 		col = texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy).rgb;
 	}
-	
 	else
 	{
 		col = texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy).rgb;

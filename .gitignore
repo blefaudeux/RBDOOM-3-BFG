@@ -2,6 +2,7 @@ build*
 eclipse*
 neo/ipch
 *.user
+*.directory
 
 Doom3BFG.exe
 base/_common.crc

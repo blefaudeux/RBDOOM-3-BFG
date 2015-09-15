@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 
 idCVar r_drawEyeColor( "r_drawEyeColor", "0", CVAR_RENDERER | CVAR_BOOL, "Draw a colored box, red = left eye, blue = right eye, grey = non-stereo" );
 idCVar r_motionBlur( "r_motionBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of motion blur samples" );
-idCVar r_dofBlur( "r_dofBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of depth of field blur samples" );
+idCVar r_dofBokeh( "r_dofBokeh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of depth of field blur samples" );
 idCVar r_forceZPassStencilShadows( "r_forceZPassStencilShadows", "0", CVAR_RENDERER | CVAR_BOOL, "force Z-pass rendering for performance testing" );
 idCVar r_useStencilShadowPreload( "r_useStencilShadowPreload", "1", CVAR_RENDERER | CVAR_BOOL, "use stencil shadow preload algorithm instead of Z-fail" );
 idCVar r_skipShaderPasses( "r_skipShaderPasses", "0", CVAR_RENDERER | CVAR_BOOL, "" );
@@ -3992,21 +3992,19 @@ void RB_DrawViewInternal( const viewDef_t* viewDef, const int stereoEye )
 
 /*
 ==================
-RB_DofBlur
+DofBokeh
 
-Experimental feature
+Experimental feature (BL)
 ==================
 */
-void RB_DofBlur()
+void DofBokeh()
 {
-    // Ben : WiP, reusing most of the motion blurring, work to do to match it with the gaze..
-
     if( !backEnd.viewDef->viewEntitys )
     {
         // 3D views only
         return;
     }
-    if( r_dofBlur.GetInteger() <= 0 )
+    if( r_dofBokeh.GetInteger() <= 0 )
     {
         return;
     }
@@ -4026,24 +4024,26 @@ void RB_DofBlur()
     globalImages->blackImage->Bind();
     backEnd.currentSpace = NULL;
 
-    // copy off the color buffer and the depth buffer for the motion blur prog
+    // copy off the color buffer and the depth buffer for the depth bokeh
     // we use the viewport dimensions for copying the buffers in case resolution scaling is enabled.
+    // the depth buffer has been grabbed before
     const idScreenRect& viewport = backEnd.viewDef->viewport;
     globalImages->currentRenderImage->CopyFramebuffer( viewport.x1, viewport.y1, viewport.GetWidth(), viewport.GetHeight() );
 
     GL_State( GLS_DEPTHFUNC_ALWAYS );
     GL_Cull( CT_TWO_SIDED );
 
+    // load the bokeh processing shader
     renderProgManager.BindShader_DoF();
 
-    // let the fragment program know how many samples we are going to use
-    idVec4 samples( ( float )( 1 << r_dofBlur.GetInteger() ) );
-    SetFragmentParm( RENDERPARM_OVERBRIGHT, samples.ToFloatPtr() );
+    // let the fragment program know how many samples we are going to use, and where the reference focus is
+    idVec4 samples( ( float )( 1 << r_dofBokeh.GetInteger() ) );
+    SetFragmentParm( RENDERPARM_BOKEH_SAMPLE, samples.ToFloatPtr() );
+
+    float const depth = 0.2f; // TODO: Ben - lookup the value from the gaze point + depth buffer
+    SetFragmentParm( RENDERPARM_BOKEH_DEPTH, &depth );
 
     // Lookup the depth buffer & current gaze coordinate to center the DoF
-    // TODO: Ben
-
-    // Push the depth coordinate to the shader
     // TODO: Ben
 
     // Fire up the shader and draw elements
@@ -4220,7 +4220,11 @@ void RB_DrawView( const void* data, const int stereoEye )
 	// render the scene
 	RB_DrawViewInternal( cmd->viewDef, stereoEye );
 	
+    // Added motion blur processing from RB
 	RB_MotionBlur();
+
+    // Added experimental DoF processing tied to gaze point
+    DofBokeh();
 	
 	// restore the context for 2D drawing if we were stubbing it out
 	// RB: not really needed

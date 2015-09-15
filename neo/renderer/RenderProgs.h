@@ -153,6 +153,9 @@ enum renderParm_t
 	RENDERPARM_SHADOW_MATRIX_5_Z,
 	RENDERPARM_SHADOW_MATRIX_5_W,
 	// RB end
+
+    RENDERPARM_BOKEH_SAMPLE,    // The CoC for the bokeh computation
+    RENDERPARM_BOKEH_DEPTH,     // Reference depth - where is the focus point
 	
 	RENDERPARM_TOTAL,
 	RENDERPARM_USER = 128,
@@ -510,7 +513,6 @@ protected:
 		BUILTIN_STEREO_INTERLACE,
 		BUILTIN_MOTION_BLUR,
         BUILTIN_DEPTH_OF_FIELD,
-
 		
 		BUILTIN_DEBUG_SHADOWMAP,
 		

@@ -33,6 +33,7 @@ const static int NUM_SYSTEM_OPTIONS_OPTIONS = 8;
 
 extern idCVar r_multiSamples;
 extern idCVar r_motionBlur;
+extern idCVar r_dofBokeh;
 extern idCVar r_swapInterval;
 extern idCVar s_volume_dB;
 extern idCVar r_lightScale;
@@ -109,6 +110,14 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_MOTIONBLUR );
 	options->AddChild( control );
+
+    control = new( TAG_SWF ) idMenuWidget_ControlButton();
+    control->SetOptionType( OPTION_SLIDER_TEXT );
+    control->SetLabel( "#str_swf_dofbokeh" );
+    control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_DOFBOKEH );
+    control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+    control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_DOFBOKEH );
+    options->AddChild( control );
 	
 	// RB begin
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
@@ -390,7 +399,8 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 {
 	originalFramerate = com_engineHz.GetInteger();
 	originalAntialias = r_multiSamples.GetInteger();
-	originalMotionBlur = r_motionBlur.GetInteger();
+    originalMotionBlur = r_motionBlur.GetInteger();
+    originalDofBokeh = r_dofBokeh.GetInteger();
 	originalVsync = r_swapInterval.GetInteger();
 	originalBrightness = r_lightScale.GetFloat();
 	originalVolume = s_volume_dB.GetFloat();
@@ -513,6 +523,13 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::AdjustFi
 			r_motionBlur.SetInteger( AdjustOption( r_motionBlur.GetInteger(), values, numValues, adjustAmount ) );
 			break;
 		}
+        case SYSTEM_FIELD_DOFBOKEH:
+        {
+            static const int numValues = 5;
+            static const int values[numValues] = { 0, 2, 3, 4, 5 };
+            r_dofBokeh.SetInteger( AdjustOption( r_dofBokeh.GetInteger(), values, numValues, adjustAmount ) );
+            break;
+        }
 		// RB begin
 		case SYSTEM_FIELD_SHADOWMAPPING:
 		{
@@ -607,6 +624,12 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 				return "#str_swf_disabled";
 			}
 			return va( "%dx", idMath::IPow( 2, r_motionBlur.GetInteger() ) );
+        case SYSTEM_FIELD_DOFBOKEH:
+            if( r_dofBokeh.GetInteger() == 0 )
+            {
+                return "#str_swf_disabled";
+            }
+            return va( "%dx", idMath::IPow( 2, r_dofBokeh.GetInteger() ) );
 		// RB begin
 		case SYSTEM_FIELD_SHADOWMAPPING:
 			if( r_useShadowMapping.GetInteger() == 1 )
@@ -649,6 +672,10 @@ bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsDataCh
 	{
 		return true;
 	}
+    if( originalDofBokeh != r_dofBokeh.GetInteger() )
+    {
+        return true;
+    }
 	if( originalVsync != r_swapInterval.GetInteger() )
 	{
 		return true;
