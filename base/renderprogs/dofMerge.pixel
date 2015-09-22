@@ -1,0 +1,68 @@
+  sampler colorSampler;      // Original source image  
+   sampler smallBlurSampler;  // Output of SmallBlurPS()  
+   sampler largeBlurSampler;  // Blurred output of DofDownsample()  
+   float2 invRenderTargetSize;  
+float4 dofLerpScale;  
+float4 dofLerpBias;  
+float3 dofEqFar;  
+float4 tex2Doffset( sampler s, float2 tc, float2 offset )  
+{  
+  return tex2D( s, tc + offset * invRenderTargetSize );  
+}  
+half3 GetSmallBlurSample( float2 texCoords )  
+{  
+  half3 sum;  
+  const half weight = 4.0 / 17;  
+  sum = 0;  // Unblurred sample done by alpha blending  
+  sum += weight * tex2Doffset( colorSampler, tc, +0.5, -1.5 ).rgb;  
+  sum += weight * tex2Doffset( colorSampler, tc, -1.5, -0.5 ).rgb;  
+  sum += weight * tex2Doffset( colorSampler, tc, -0.5, +1.5 ).rgb;  
+  sum += weight * tex2Doffset( colorSampler, tc, +1.5, +0.5 ).rgb;  
+  return sum;  
+}  
+half4 InterpolateDof( half3 small, half3 med, half3 large, half t )  
+{  
+  half4 weights;  
+  half3 color;  
+  half  alpha;  
+  // Efficiently calculate the cross-blend weights for each sample.  
+   // Let the unblurred sample to small blur fade happen over distance  
+   // d0, the small to medium blur over distance d1, and the medium to  
+   // large blur over distance d2, where d0 + d1 + d2 = 1.  
+   // dofLerpScale = float4( -1 / d0, -1 / d1, -1 / d2, 1 / d2 );  
+   // dofLerpBias = float4( 1, (1 – d2) / d1, 1 / d2, (d2 – 1) / d2 );  
+  weights = saturate( t * dofLerpScale + dofLerpBias );  
+  weights.yz = min( weights.yz, 1 - weights.xy );  
+  // Unblurred sample with weight "weights.x" done by alpha blending  
+  color = weights.y * small + weights.z * med + weights.w * large;  
+  alpha = dot( weights.yzw, half3( 16.0 / 17, 1.0, 1.0 ) );  
+  return half4( color, alpha );  
+}  
+half4 ApplyDepthOfField( const float2 texCoords )  
+{  
+  half3 small;  
+  half4 med;  
+  half3 large;  
+  half depth;  
+  half nearCoc;  
+  half farCoc;  
+  half coc;  
+  small = GetSmallBlurSample( texCoords );  
+  med = tex2D( smallBlurSampler, texCoords );  
+  large = tex2D( largeBlurSampler, texCoords ).rgb;  
+  nearCoc = med.a;  
+  depth = tex2D( depthSampler, texCoords ).r;  
+  if ( depth > 1.0e6 )  
+  {  
+    coc = nearCoc; // We don't want to blur the sky.  
+  }  
+  else  
+  {  
+    // dofEqFar.x and dofEqFar.y specify the linear ramp to convert  
+   // to depth for the distant out-of-focus region.  
+   // dofEqFar.z is the ratio of the far to the near blur radius.  
+    farCoc = saturate( dofEqFar.x * depth + dofEqFar.y );  
+    coc = max( nearCoc, farCoc * dofEqFar.z );  
+  }  
+  return InterpolateDof( small, med.rgb, large, coc );  
+}   

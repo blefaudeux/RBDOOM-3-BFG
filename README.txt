@@ -198,6 +198,7 @@ _________________________
 	> cd ../build
 	> make
 
+4. [Optional] If you plan to modify the shaders, premake4 is used to bake them in the C++ source code
 ___________________________________________________
 
 7) INSTALLATION, GETTING THE GAMEDATA, RUNNING THE GAME
