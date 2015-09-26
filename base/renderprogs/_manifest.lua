@@ -99,8 +99,15 @@ return
 	"wobblesky.vertex",
 	"zcullReconstruct.pixel",
 	"zcullReconstruct.vertex",
-        "dofBokeh.pixel",
-        "dofBokeh.vertex",
+        "dofBlurCoc.pixel",
+        "dofBlurCoc.vertex",
+        "dofCoc.pixel",
+        "dofCoc.vertex",
+        "dofDownsample.pixel",
+        "dofDownsample.vertex",
+        "dofMerge.pixel",
+        "dofMerge.vertex",      
+        
 }
 
 	
