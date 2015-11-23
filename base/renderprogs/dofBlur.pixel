@@ -18,6 +18,7 @@ float computeBlurFactor( float depth, float refDepth)
 {
   // Returns a [0,1] value depending on the depth difference
   // very crude...
+  /*
   float diff =  (depth-refDepth)*(depth-refDepth);
 
   if (diff > 1.f) // Not sure of what functions are available ?
@@ -29,8 +30,8 @@ float computeBlurFactor( float depth, float refDepth)
   {
     return 0.f;
   }
-
-  return diff;
+*/
+  return 1.f;
 }
 
 void main( PS_IN fragment, out PS_OUT result ) {
