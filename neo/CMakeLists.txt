@@ -1228,21 +1228,28 @@ add_definitions(-D__DOOM__
 if(USE_TET_GAZE)
     add_definitions(-DUSE_TET)
 
-    SET( Boost_USE_MULTITHREAD ON )
-    SET( Boost_USE_STATIC_LIBS ON )
     SET( BOOST_MIN_VERSION "1.53.0" )
-    FIND_PACKAGE( Boost REQUIRED thread system )
-
-    IF(Boost_FOUND)
-        list(APPEND RBDOOM3_INCLUDES ${Boost_INCLUDE_DIR})
-        link_directories( ${Boost_LIBRARIES} )
-        # message("Boost include dir : ${Boost_INCLUDE_DIR}\n Boost libraries :  ${Boost_LIBRARIES}\n" )
-    ELSE()
+    FIND_PACKAGE( Boost REQUIRED thread system)
+	SET( Boost_USE_MULTITHREAD ON )
+    SET( Boost_USE_STATIC_LIBS ON )
+    
+    if(Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIR})
+		link_directories( ${Boost_LIBRARY_DIR} )
+		set(Boost_USE_STATIC_LIBS        OFF)
+		set(Boost_USE_MULTITHREADED      ON)
+		set(Boost_USE_STATIC_RUNTIME     OFF)
+		set(BOOST_ALL_DYN_LINK           OFF)   # force dynamic linking for all libraries
+		add_definitions(-DBOOST_ALL_NO_LIB)
+    else()
       message (FATAL_ERROR "Could not find Boost libraries!")
-    ENDIF(Boost_FOUND)
-
+    endif(Boost_FOUND)
+	
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/tet/include)
+	message ("Including TET SDK in : \n" ${CMAKE_CURRENT_SOURCE_DIR}/libs/tet)
+	
     list(APPEND RBDOOM3_INCLUDES ${TET_INCLUDES})
-    list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})
+    list(APPEND RBDOOM3_SOURCES ${TET_SOURCES})	
 endif()
 
 if(MONOLITH)
@@ -1398,7 +1405,7 @@ if(MSVC)
 	list(APPEND RBDOOM3_SOURCES
 		${SYS_SOURCES}
 		${WIN32_SOURCES})
-
+		
 	list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
 	
 	if(USE_PRECOMPILED_HEADERS) 
@@ -1461,7 +1468,7 @@ if(MSVC)
         ${JPEG_LIBRARY}
         ${GLEW_LIBRARY}
         ${Boost_LIBRARIES}
-	${CMAKE_DL_LIBS}
+		${CMAKE_DL_LIBS}
 		)
 		
 	#CMAKE_BINARY_DIR
