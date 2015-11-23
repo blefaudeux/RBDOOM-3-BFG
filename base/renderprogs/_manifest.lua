@@ -3,7 +3,7 @@ return
 	-- includes
 	"global.inc",
 	"skinning.inc",
-	
+
 	-- shaders
 	"bink.pixel",
 	"bink.vertex",
@@ -99,15 +99,6 @@ return
 	"wobblesky.vertex",
 	"zcullReconstruct.pixel",
 	"zcullReconstruct.vertex",
-        "dofBlurCoc.pixel",
-        "dofBlurCoc.vertex",
-        "dofCoc.pixel",
-        "dofCoc.vertex",
-        "dofDownsample.pixel",
-        "dofDownsample.vertex",
-        "dofMerge.pixel",
-        "dofMerge.vertex",      
-        
+  "dofBlur.pixel",
+  "dofBlur.vertex",        
 }
-
-	

@@ -3997,7 +3997,7 @@ DofBokeh
 Experimental feature (BL)
 ==================
 */
-void DofBokeh()
+void DepthBlur()
 {
     if( !backEnd.viewDef->viewEntitys )
     {
@@ -4215,7 +4215,7 @@ void RB_DrawView( const void* data, const int stereoEye )
 	RB_MotionBlur();
 
     // Added experimental DoF processing tied to gaze point
-    DofBokeh();
+    DepthBlur();
 	
 	// restore the context for 2D drawing if we were stubbing it out
 	// RB: not really needed

@@ -1761,7 +1761,7 @@ int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
 {
 #if defined(USE_TET)
     // Unstack the gaze events
-    int numEvents = gazeListener->m_gazePoints.Num();
+    int numEvents = gazeListener->m_gazePoints.size();
 
     if( numEvents > MAX_GAZE_EVENTS )
     {
@@ -1770,13 +1770,11 @@ int Sys_PollGazeEvents( int gazeEvents[MAX_GAZE_EVENTS][2] )
 
     for( int i = 0; i < numEvents; ++i )
     {
-        const std::pair<float, float>& gp = gazeListener->m_gazePoints[i];
-
-        gazeEvents[i][0] = gp.first;
-        gazeEvents[i][1] = gp.second;
+        gazeEvents[i][0] = gazeListener->m_gazePoints[i].x;
+        gazeEvents[i][1] = gazeListener->m_gazePoints[i].y;
     }
 
-    gazeListener->m_gazePoints.SetNum( 0 );
+    gazeListener->m_gazePoints.clear();
 #else
     int numEvents = 0;
 #endif
